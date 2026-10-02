@@ -19,6 +19,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://erp:erp@localhost:5432/erp?schema=public
       COOKIE_SECURE: 'false'
+      APP_URL: http://localhost:3000   # base for emailed reset links (no SMTP in CI: sending fails and is audited)
       CI: 'true'
     steps:
       - uses: actions/checkout@v4
