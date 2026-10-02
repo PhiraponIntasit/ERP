@@ -12,7 +12,9 @@
     "db:reset": "prisma migrate reset --force",
     "vercel-build": "sh scripts/vercel-build.sh",
     "db:bootstrap": "tsx prisma/bootstrap.ts",
-    "backup:photos": "node scripts/backup-photos.mjs"
+    "backup:photos": "node scripts/backup-photos.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:fresh": "prisma migrate reset --force && playwright test"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -27,6 +29,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "~1.56.1",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
