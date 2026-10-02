@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { logout } from '@/server/actions/auth';
 import { HDR, MOD_PATH, type Module } from '@/lib/domain';
-import { BellIcon, LogoutIcon } from './icons';
+import { BellIcon, LogoutIcon, MenuIcon, XIcon } from './icons';
 import { ThemeToggle } from './theme-toggle';
 import { ChangePasswordButton } from './change-password';
 
@@ -13,12 +13,24 @@ const moduleFor = (path: string) => (Object.entries(MOD_PATH) as [Module, string
 export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: string; href: string; badge: number }[]; me: { name: string; username: string; roleLabel: string; initial: string } }) {
   const path = usePathname();
   const [pending, start] = useTransition();
+  // Phones: the menu collapses behind a button so each page starts with its own content
+  const [open, setOpen] = useState(false);
+  useEffect(() => { setOpen(false); }, [path]);
+  const pendingTotal = nav.reduce((a, n) => a + n.badge, 0);
   return (
-    <aside className="sidebar">
-      <div style={{ padding: '0 8px' }}>
-        <div className="brand">Apex ERP</div>
-        <div style={{ fontSize: 11, color: 'var(--color-neutral-700)', marginTop: 4 }}>Helpdesk · Inventory · Procurement</div>
+    <aside className={`sidebar${open ? ' open' : ''}`}>
+      <div className="sidebar-head">
+        <div style={{ padding: '0 8px', minWidth: 0 }}>
+          <div className="brand">Apex ERP</div>
+          <div className="brand-sub">Helpdesk · Inventory · Procurement</div>
+        </div>
+        <button className="btn btn-secondary btn-icon menu-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="app-menu"
+          aria-label={open ? 'ปิดเมนู' : 'เปิดเมนู'} style={{ position: 'relative' }}>
+          {open ? <XIcon size={20} /> : <MenuIcon />}
+          {!open && pendingTotal > 0 && <span className="badge-dot">{pendingTotal}</span>}
+        </button>
       </div>
+      <div className="sidebar-body" id="app-menu">
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
         <div className="eyebrow" style={{ padding: '0 10px 6px' }}>เมนูตามสิทธิ์ของคุณ</div>
@@ -46,6 +58,7 @@ export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: s
         <button className="btn btn-secondary" style={{ justifyContent: 'flex-start' }} disabled={pending} onClick={() => start(() => logout())}>
           <LogoutIcon /> ออกจากระบบ
         </button>
+      </div>
       </div>
     </aside>
   );

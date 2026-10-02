@@ -5,6 +5,7 @@ const svg = (size: number, sw: number, children: React.ReactNode) => (
 );
 export const SunIcon = ({ size = 18 }: P) => svg(size, 1.6, <><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></>);
 export const MoonIcon = ({ size = 18 }: P) => svg(size, 1.6, <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />);
+export const MenuIcon = ({ size = 20 }: P) => svg(size, 1.6, <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>);
 export const BellIcon = ({ size = 18 }: P) => svg(size, 1.6, <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></>);
 export const LogoutIcon = ({ size = 16 }: P) => svg(size, 1.6, <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></>);
 export const XIcon = ({ size = 14 }: P) => svg(size, 1.8, <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>);
