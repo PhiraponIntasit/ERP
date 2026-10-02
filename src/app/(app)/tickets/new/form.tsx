@@ -7,6 +7,8 @@ import { ImagePlusIcon, XIcon } from '@/components/icons';
 import { CameraIcon, CategoryIcon, GalleryIcon, SendIcon } from '@/components/category-icons';
 import { CATS, SLA_H, URG, URG_KEYS } from '@/lib/domain';
 import css from './form.module.css';
+import { ScanButton } from '@/components/barcode-scanner';
+import { useToast } from '@/components/toast';
 
 type Img = { src: string; name: string; blob: Blob };
 const MAX = 6;
@@ -35,6 +37,7 @@ export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: strin
   const [nt, setNt] = useState(blank);
   const [images, setImages] = useState<Img[]>([]);
   const { run, pending, error, setError } = useAction();
+  const toast = useToast();
   const set = (k: keyof typeof blank, v: string) => setNt(x => ({ ...x, [k]: v }));
 
   const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +80,10 @@ export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: strin
       <div className="field"><label htmlFor="nt-title">3. หัวข้อปัญหา</label><input id="nt-title" className="input" value={nt.title} onChange={e => set('title', e.target.value)} maxLength={200} placeholder="เช่น โน้ตบุ๊กเปิดไม่ติด หลังอัปเดต Windows" enterKeyHint="next" /></div>
       <div className="field">
         <label htmlFor="nt-asset">4. รหัสทรัพย์สิน (Asset Tag) — ถ้ามี</label>
-        <input id="nt-asset" className="input" value={nt.assetTag} onChange={e => set('assetTag', e.target.value)} maxLength={40} placeholder="เช่น NB-0077" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
+        <div className={css.assetRow}>
+          <input id="nt-asset" className="input" value={nt.assetTag} onChange={e => set('assetTag', e.target.value)} maxLength={40} placeholder="เช่น NB-0077" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
+          <ScanButton onScan={tag => { set('assetTag', tag); toast(`สแกนได้: ${tag}`); }} />
+        </div>
         {myAssets.length > 0 && (
           <div className={css.chips}>
             <span style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>อุปกรณ์ที่คุณถือครอง:</span>
