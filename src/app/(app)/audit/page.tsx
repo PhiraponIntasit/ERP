@@ -2,22 +2,28 @@ import { db } from '@/server/db';
 import { requirePage } from '@/server/auth';
 import { auditWhere } from '@/server/audit-query';
 import { AUDIT_CATS, fmtDT } from '@/lib/domain';
+import { Pager } from '@/components/pager';
+import { pageOf } from '@/lib/paging';
 import { AuditToolbar } from './toolbar';
 
 const WARN = /ไม่สำเร็จ|ระงับ|ลบ|ไม่อนุมัติ|ปฏิเสธ/;
-const LIMIT = 200;
+const PER_PAGE = 50;
 
-export default async function AuditPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string; page?: string }> }) {
   await requirePage('audit');
   const sp = await searchParams;
   const cat = sp.cat && AUDIT_CATS[sp.cat] ? sp.cat : 'all', q = (sp.q ?? '').slice(0, 100);
   const where = auditWhere(cat, q);
-  const [rows, count, totals, all] = await Promise.all([
-    db.auditLog.findMany({ where, orderBy: [{ t: 'desc' }, { id: 'desc' }], take: LIMIT }),
+  const [count, totals, all] = await Promise.all([
     db.auditLog.count({ where }),
     db.auditLog.groupBy({ by: ['cat'], _count: true }),
     db.auditLog.count(),
   ]);
+  const page = pageOf(sp.page, count, PER_PAGE);
+  const rows = await db.auditLog.findMany({ where, orderBy: [{ t: 'desc' }, { id: 'desc' }], skip: page.skip, take: page.size });
+  const keep: Record<string, string> = {};
+  if (cat !== 'all') keep.cat = cat;
+  if (q.trim()) keep.q = q.trim();
   const n = new Map(totals.map(t => [t.cat, t._count]));
   const chips = [{ k: 'all', label: 'ทั้งหมด', n: all }, ...Object.entries(AUDIT_CATS).map(([k, label]) => ({ k, label, n: n.get(k) ?? 0 })).filter(c => c.n > 0)];
   return (
@@ -41,7 +47,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           </tbody>
         </table>
       </div>
-      {count > LIMIT && <div style={{ fontSize: 13, color: 'var(--color-neutral-700)' }}>แสดง {LIMIT} รายการล่าสุดจาก {count} รายการ — ใช้ตัวกรองหรือ Export CSV เพื่อดูทั้งหมด</div>}
+      {!rows.length && <div className="empty">ไม่พบรายการ</div>}
+      <Pager p={page} keep={keep} />
     </div>
   );
 }
