@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { db } from '../db';
 import { audit, createSession, currentSessionId, destroySession, getUser, homePath, requireAction } from '../auth';
 import { act, Fail } from '../act';
+import { passwordProblem } from '@/lib/password';
 import { config } from '@/lib/domain';
 
 // Compared against when the username does not exist, so response time doesn't reveal valid usernames.
@@ -52,9 +53,10 @@ export async function changeOwnPassword(current: string, next: string, confirm: 
       await audit(db, me, 'user', 'เปลี่ยนรหัสผ่านไม่สำเร็จ', me.username, 'รหัสผ่านปัจจุบันไม่ถูกต้อง');
       throw new Fail('รหัสผ่านปัจจุบันไม่ถูกต้อง');
     }
-    if (next.length < 4) throw new Fail('รหัสผ่านใหม่อย่างน้อย 4 ตัวอักษร');
     if (next !== confirm) throw new Fail('รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน');
     if (next === current) throw new Fail('รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม');
+    const weak = passwordProblem(next);
+    if (weak) throw new Fail(weak);
     const passwordHash = await bcrypt.hash(next, 10);
     const keep = await currentSessionId();
     await db.$transaction(async tx => {

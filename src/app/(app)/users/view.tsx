@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createUser, savePerms, toggleUserActive } from '@/server/actions/people';
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
+import { MIN_PASSWORD } from '@/lib/password';
 import { ALL, MOD_LABEL, ROLE_PERMS, ROLES, type Module, type Role } from '@/lib/domain';
 
 type U = { id: string; name: string; username: string; role: string; roleLabel: string; perms: string[]; active: boolean; custom: boolean; empText: string };
@@ -54,7 +55,7 @@ export function UsersView({ users, emps, meId }: { users: U[]; emps: { id: strin
 }
 
 function NewUserDialog({ emps, onClose }: { emps: { id: string; name: string }[]; onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>({ role: 'employee', password: '1234', empId: '', name: '', username: '' });
+  const [f, setF] = useState<Record<string, string>>({ role: 'employee', password: '', empId: '', name: '', username: '' });
   const { run, pending, error } = useAction();
   const set = (k: string, v: string) => setF(x => ({ ...x, [k]: v }));
   return (
@@ -68,7 +69,7 @@ function NewUserDialog({ emps, onClose }: { emps: { id: string; name: string }[]
         </div>
         <div className="field full"><label htmlFor="nu-name">ชื่อที่แสดง</label><input id="nu-name" className="input" value={f.name} onChange={e => set('name', e.target.value)} /></div>
         <div className="field"><label htmlFor="nu-u">Username</label><input id="nu-u" className="input" value={f.username} onChange={e => set('username', e.target.value)} autoComplete="off" /></div>
-        <div className="field"><label htmlFor="nu-p">รหัสผ่านเริ่มต้น</label><input id="nu-p" className="input" value={f.password} onChange={e => set('password', e.target.value)} autoComplete="new-password" /></div>
+        <div className="field"><label htmlFor="nu-p">รหัสผ่านเริ่มต้น (อย่างน้อย {MIN_PASSWORD} ตัว)</label><input id="nu-p" className="input" value={f.password} onChange={e => set('password', e.target.value)} autoComplete="new-password" /></div>
         <div className="field full"><label htmlFor="nu-r">บทบาท</label><select id="nu-r" className="input" value={f.role} onChange={e => set('role', e.target.value)}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
       </div>
       <Err msg={error} />
@@ -99,7 +100,7 @@ function PermsDialog({ u, onClose }: { u: U; onClose: () => void }) {
           </label>
         ))}
       </div>
-      <div className="field"><label htmlFor="pm-p">ตั้งรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label><input id="pm-p" className="input" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
+      <div className="field"><label htmlFor="pm-p">ตั้งรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน · อย่างน้อย {MIN_PASSWORD} ตัว)</label><input id="pm-p" className="input" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
       <Err msg={error} />
       <div className="dialog-actions">
         <button className="btn btn-secondary" onClick={onClose}>ยกเลิก</button>
