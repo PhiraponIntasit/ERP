@@ -32,6 +32,10 @@ To start over with fresh sample data, point `DATABASE_URL` at a new empty databa
 | `UPLOAD_DIR` | `./storage/uploads` | Ticket photo storage (outside `public/`) |
 | `COOKIE_SECURE` | prod: `true` | Set `false` only for plain-HTTP intranet hosting |
 
+## Working together
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for who owns which menu, shared files, and migration rules.
+
 ## Layout
 
 ```
