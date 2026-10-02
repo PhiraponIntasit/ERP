@@ -89,22 +89,40 @@ test.describe('purchase list pagination', () => {
   });
   test.afterAll(async () => { await db.purchaseRequest.deleteMany({ where: { id: { startsWith: PR_TAG } } }); });
 
+  const list = (page: import('@playwright/test').Page) => page.getByRole('table', { name: 'ใบขอซื้อ', exact: true });
+
   test('store keeper pages through their own PRs', async ({ page }) => {
     const sk = await db.user.findUniqueOrThrow({ where: { username: USERS.storekeeper } });
-    const total = await db.purchaseRequest.count({ where: { requesterId: sk.id } }), last = Math.ceil(total / 20);
+    const total = await db.purchaseRequest.count({ where: { requesterId: sk.id, status: { not: 'approved' } } }), last = Math.ceil(total / 20);
     await loginAs(page, USERS.storekeeper);
     await page.goto('/purchase');
-    await expect(page.locator('table tbody tr')).toHaveCount(20);
+    await expect(list(page).locator('tbody tr')).toHaveCount(20);
     await expectPagerText(page, 1, 20, total);
     await page.goto(`/purchase?page=${last}`);
-    await expect(page.locator('table tbody tr').last()).toContainText(`${PR_TAG}-00`); // oldest last
+    await expect(list(page).locator('tbody tr').last()).toContainText(`${PR_TAG}-00`); // oldest last
   });
 
   test('admin sees every PR in the count', async ({ page }) => {
-    const total = await db.purchaseRequest.count();
+    const total = await db.purchaseRequest.count({ where: { status: { not: 'approved' } } });
     await loginAs(page, USERS.admin);
     await page.goto('/purchase');
     await expectPagerText(page, 1, 20, total);
+  });
+
+  test('approved PRs waiting for receipt stay on top, whatever their age', async ({ page }) => {
+    const id = `${PR_TAG}-OLD`;
+    const [sk, mgr] = await Promise.all([
+      db.user.findUniqueOrThrow({ where: { username: USERS.storekeeper } }),
+      db.user.findUniqueOrThrow({ where: { username: USERS.manager } }),
+    ]);
+    await db.purchaseRequest.create({ data: { id, date: new Date(Date.UTC(1999, 0, 1)), requesterId: sk.id, vendor: 'E2E', status: 'approved', approverId: mgr.id, decided: new Date(Date.UTC(1999, 0, 2)) } });
+    await loginAs(page, USERS.storekeeper);
+    for (const url of ['/purchase', '/purchase?page=2']) {
+      await page.goto(url);
+      const top = page.getByRole('table', { name: 'ใบขอซื้อรอรับเข้าคลัง' });
+      await expect(top.locator('tr', { hasText: id }).getByRole('button', { name: 'รับเข้าคลัง' })).toBeVisible();
+      await expect(list(page).locator('tr', { hasText: id })).toHaveCount(0);
+    }
   });
 });
 
