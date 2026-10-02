@@ -2,7 +2,9 @@
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { db } from '../db';
-import { audit, createSession, destroySession, getUser, homePath } from '../auth';
+import { audit, createSession, currentSessionId, destroySession, getUser, homePath, requireAction } from '../auth';
+import { act, Fail } from '../act';
+import { passwordProblem } from '@/lib/password';
 import { config } from '@/lib/domain';
 
 // Compared against when the username does not exist, so response time doesn't reveal valid usernames.
@@ -40,4 +42,28 @@ export async function logout() {
   if (me) await audit(db, me, 'auth', 'ออกจากระบบ', me.username);
   await destroySession();
   redirect('/login');
+}
+
+/** Any signed-in user may change their own password. Other devices are signed out; this one stays signed in. */
+export async function changeOwnPassword(current: string, next: string, confirm: string) {
+  return act(async () => {
+    const me = await requireAction();
+    if (!current || !next) throw new Fail('กรุณากรอกรหัสผ่านให้ครบ');
+    if (!(await bcrypt.compare(current, me.passwordHash))) {
+      await audit(db, me, 'user', 'เปลี่ยนรหัสผ่านไม่สำเร็จ', me.username, 'รหัสผ่านปัจจุบันไม่ถูกต้อง');
+      throw new Fail('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+    }
+    if (next !== confirm) throw new Fail('รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน');
+    if (next === current) throw new Fail('รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม');
+    const weak = passwordProblem(next);
+    if (weak) throw new Fail(weak);
+    const passwordHash = await bcrypt.hash(next, 10);
+    const keep = await currentSessionId();
+    await db.$transaction(async tx => {
+      await tx.user.update({ where: { id: me.id }, data: { passwordHash } });
+      const out = await tx.session.deleteMany({ where: { userId: me.id, ...(keep ? { id: { not: keep } } : {}) } });
+      await audit(tx, me, 'user', 'เปลี่ยนรหัสผ่าน', me.username, out.count ? `ออกจากระบบอุปกรณ์อื่น ${out.count} เครื่อง` : '');
+    });
+    return 'เปลี่ยนรหัสผ่านแล้ว';
+  });
 }

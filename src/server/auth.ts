@@ -24,6 +24,12 @@ export async function createSession(userId: string) {
   });
 }
 
+/** Id (token hash) of the session making this request, or null. */
+export async function currentSessionId() {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? sha256(token) : null;
+}
+
 export async function destroySession() {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
