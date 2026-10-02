@@ -4,8 +4,10 @@ import type { PRView } from '@/server/views';
 import { receivePR } from '@/server/actions/stock';
 import { useAction } from '@/components/use-action';
 import { PODialog, PRDialog, type InvItem } from '@/components/procurement';
+import { Pager } from '@/components/pager';
+import type { Page } from '@/lib/paging';
 
-export function PurchaseView({ prs, items, factor }: { prs: PRView[]; items: InvItem[]; factor: number }) {
+export function PurchaseView({ prs, page, items, factor }: { prs: PRView[]; page: Page; items: InvItem[]; factor: number }) {
   const [dlg, setDlg] = useState<null | { type: 'pr' } | { type: 'po'; id: string }>(null);
   const { run, pending } = useAction({ errorAs: 'toast' });
   const po = dlg?.type === 'po' ? prs.find(p => p.id === dlg.id) : undefined;
@@ -39,6 +41,8 @@ export function PurchaseView({ prs, items, factor }: { prs: PRView[]; items: Inv
           </tbody>
         </table>
       </div>
+      {!prs.length && <div className="empty">ยังไม่มีใบขอซื้อ</div>}
+      <Pager p={page} />
       {dlg?.type === 'pr' && <PRDialog items={items} factor={factor} onClose={() => setDlg(null)} />}
       {po && <PODialog po={po} onClose={() => setDlg(null)} />}
     </div>
