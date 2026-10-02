@@ -2,7 +2,11 @@ import 'server-only';
 import { mkdir, writeFile, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { put, get, del } from '@vercel/blob';
 
+/** On Vercel the filesystem is read-only, so photos go to a private Vercel Blob store when its token is set; otherwise to UPLOAD_DIR. */
+const BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
+const blobPath = (file: string) => `tickets/${file}`;
 const DIR = path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR || './storage/uploads');
 export const MAX_IMAGES = 6;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -17,13 +21,28 @@ export function sniffImage(b: Buffer): string | null {
 }
 
 export async function saveUpload(buf: Buffer, mime: string) {
-  await mkdir(DIR, { recursive: true });
   const ext = mime.split('/')[1].replace('jpeg', 'jpg');
   const file = `${randomBytes(16).toString('hex')}.${ext}`;
+  if (BLOB) {
+    await put(blobPath(file), buf, { access: 'private', contentType: mime, addRandomSuffix: false, allowOverwrite: false });
+    return file;
+  }
+  await mkdir(DIR, { recursive: true });
   await writeFile(path.join(/*turbopackIgnore: true*/ DIR, file), buf, { flag: 'wx' });
   return file;
 }
 
 const safe = (file: string) => { if (!/^[a-f0-9]{32}\.(jpg|png|webp|gif)$/.test(file)) throw new Error('bad file name'); return path.join(/*turbopackIgnore: true*/ DIR, file); };
-export const readUpload = (file: string) => readFile(safe(file));
-export const removeUpload = (file: string) => unlink(safe(file)).catch(() => {});
+
+export async function readUpload(file: string): Promise<Buffer> {
+  const p = safe(file);
+  if (!BLOB) return readFile(p);
+  const r = await get(blobPath(file), { access: 'private' });
+  if (!r || r.statusCode !== 200) throw new Error('not found');
+  return Buffer.from(await new Response(r.stream).arrayBuffer());
+}
+
+export async function removeUpload(file: string) {
+  const p = safe(file);
+  await (BLOB ? del(blobPath(file)) : unlink(p)).catch(() => {});
+}

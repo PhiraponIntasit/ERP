@@ -9,13 +9,17 @@
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "vercel-build": "sh scripts/vercel-build.sh",
+    "db:bootstrap": "tsx prisma/bootstrap.ts",
+    "backup:photos": "node scripts/backup-photos.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.3",
     "next": "^16.3.8",
     "react": "^19.3.0",

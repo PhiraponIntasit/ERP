@@ -1,0 +1,32 @@
+# Nightly encrypted dump of the production database, kept as a workflow artifact for 30 days.
+# Repo secrets: PROD_DATABASE_URL_UNPOOLED (direct connection string), BACKUP_PASSPHRASE.
+# Restore: gpg -d erp-*.dump.gpg > erp.dump && pg_restore --clean --no-owner -d "$DATABASE_URL" erp.dump
+name: db-backup
+on:
+  schedule:
+    - cron: '0 19 * * *' # 02:00 Asia/Bangkok
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump and encrypt
+        env:
+          DB: ${{ secrets.PROD_DATABASE_URL_UNPOOLED }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$DB" && test -n "$PASS" || { echo "Missing secrets"; exit 1; }
+          f="erp-$(date -u +%Y%m%d-%H%M).dump"
+          docker run --rm -e DB postgres:17 sh -c 'pg_dump --format=custom --no-owner "$DB"' > "$f"
+          test -s "$f"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" --symmetric --cipher-algo AES256 -o "$f.gpg" "$f"
+          rm "$f"
+          echo "FILE=$f.gpg" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}
+          retention-days: 30
+          if-no-files-found: error
