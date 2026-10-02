@@ -1,4 +1,5 @@
 import type { TicketView } from '@/server/views';
+import css from './ticket-bits.module.css';
 
 export function TicketHead({ t, order = 'status-first' }: { t: TicketView; order?: 'status-first' | 'urg-first' }) {
   return (
@@ -21,7 +22,7 @@ export function TicketHead({ t, order = 'status-first' }: { t: TicketView; order
 export function TicketBody({ t, titleSize = 21 }: { t: TicketView; titleSize?: number }) {
   return (<>
     <div className="card-title" style={{ fontSize: titleSize }}>{t.title}</div>
-    <p className="card-body" style={{ textAlign: 'justify', margin: 0, whiteSpace: 'pre-line' }}>{t.desc}</p>
+    <p className={`card-body ${css.desc}`}>{t.desc}</p>
   </>);
 }
 
