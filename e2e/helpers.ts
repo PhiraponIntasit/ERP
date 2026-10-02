@@ -11,6 +11,7 @@ export const USERS = {
 } as const;
 
 export async function loginAs(page: Page, username: string, password = '1234') {
+  await page.context().clearCookies(); // /login redirects away when already signed in
   await page.goto('/login');
   await page.fill('#u', username);
   await page.fill('#p', password);
