@@ -4,8 +4,10 @@ import type { PRView } from '@/server/views';
 import { approvePR, rejectPR } from '@/server/actions/stock';
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
+import { Pager } from '@/components/pager';
+import type { Page } from '@/lib/paging';
 
-export function ApprovalsView({ pending, decided, limitText }: { pending: PRView[]; decided: PRView[]; limitText: string }) {
+export function ApprovalsView({ pending, decided, decidedPage, limitText }: { pending: PRView[]; decided: PRView[]; decidedPage: Page; limitText: string }) {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const { run, pending: busy } = useAction({ errorAs: 'toast' });
   return (
@@ -48,6 +50,8 @@ export function ApprovalsView({ pending, decided, limitText }: { pending: PRView
           <tbody>{decided.map(p => <tr key={p.id}><td className="tnum nw">{p.id}</td><td>{p.requesterName}</td><td style={{ fontSize: 13 }}>{p.itemsSummary}</td><td className="r tnum">{p.grandText}</td><td><span className={`tag ${p.statusTag}`}>{p.statusLabel}</span></td><td style={{ fontSize: 13 }}>{p.approverName}</td></tr>)}</tbody>
         </table>
       </div>
+      {!decided.length && <div className="empty">ยังไม่มีใบขอซื้อที่พิจารณาแล้ว</div>}
+      <Pager p={decidedPage} />
       {rejectId && <RejectDialog id={rejectId} onClose={() => setRejectId(null)} />}
     </div>
   );

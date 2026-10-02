@@ -2,11 +2,13 @@
 import { useState } from 'react';
 import { AddItemDialog, PRDialog, ReceiveDialog, type InvItem } from '@/components/procurement';
 import { AlertIcon } from '@/components/icons';
+import { Pager } from '@/components/pager';
+import type { Page } from '@/lib/paging';
 import { bahtS } from '@/lib/domain';
 
 type Move = { id: string; tText: string; name: string; type: string; qty: number; ref: string; by: string };
 
-export function InventoryView({ items, moves, manage, factor }: { items: InvItem[]; moves: Move[]; manage: boolean; factor: number }) {
+export function InventoryView({ items, moves, movesPage, manage, factor }: { items: InvItem[]; moves: Move[]; movesPage: Page; manage: boolean; factor: number }) {
   const [q, setQ] = useState('');
   const [dlg, setDlg] = useState<null | { type: 'receive'; sku?: string } | { type: 'add' } | { type: 'pr' }>(null);
   const lowNoPR = items.filter(i => i.qty <= i.min && !i.inPR);
@@ -84,6 +86,8 @@ export function InventoryView({ items, moves, manage, factor }: { items: InvItem
             </tbody>
           </table>
         </div>
+        {!moves.length && <div className="empty">ยังไม่มีการเคลื่อนไหวสต็อก</div>}
+        <Pager p={movesPage} />
       </div>
       {dlg?.type === 'receive' && <ReceiveDialog items={items} sku={dlg.sku} onClose={close} />}
       {dlg?.type === 'add' && <AddItemDialog onClose={close} />}
