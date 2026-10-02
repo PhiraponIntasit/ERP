@@ -22,6 +22,7 @@ model User {
   createdAt    DateTime @default(now())
 
   sessions        Session[]
+  passwordResets  PasswordReset[]
   ticketsOpened   Ticket[]          @relation("TicketRequester")
   ticketsAssigned Ticket[]          @relation("TicketAssignee")
   prsRequested    PurchaseRequest[] @relation("PRRequester")
@@ -38,6 +39,18 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// One-time "forgot password" link sent by email. Only the sha256 of the token is stored.
+model PasswordReset {
+  id        String    @id
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([userId, createdAt])
 }
 
 model Employee {
