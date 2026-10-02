@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useActionState, useTransition, useState } from 'react';
 import { login, demoLogin } from '@/server/actions/auth';
 
@@ -14,7 +15,8 @@ export function LoginForm() {
       <div className="field"><label htmlFor="p">รหัสผ่าน</label><input id="p" name="p" className="input" type="password" placeholder="••••" autoComplete="current-password" required /></div>
       {state.error && <div style={{ fontSize: 13, color: 'var(--color-accent-800)', borderTop: '1px solid var(--color-accent)', paddingTop: 8 }} role="alert">{state.error}</div>}
       <button type="submit" className="btn btn-primary btn-block" style={{ padding: 12, fontSize: 16 }} disabled={pending}>เข้าสู่ระบบ</button>
-      <div style={{ fontSize: 12, color: 'var(--color-neutral-700)', textAlign: 'justify' }}>ลืมรหัสผ่านหรือต้องการบัญชีใหม่ ติดต่อผู้ดูแลระบบ (Admin) — ระบบไม่เปิดให้สมัครเอง</div>
+      <Link href="/forgot-password" style={{ fontSize: 14, alignSelf: 'flex-start' }}>ลืมรหัสผ่าน?</Link>
+      <div style={{ fontSize: 12, color: 'var(--color-neutral-700)', textAlign: 'justify' }}>ต้องการบัญชีใหม่ ติดต่อผู้ดูแลระบบ (Admin) — ระบบไม่เปิดให้สมัครเอง</div>
     </form>
   );
 }

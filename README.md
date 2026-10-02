@@ -31,6 +31,9 @@ To start over with fresh sample data, point `DATABASE_URL` at a new empty databa
 | `DISPLAY_TZ` | `Asia/Bangkok` | Time zone for all dates and dashboard day buckets |
 | `UPLOAD_DIR` | `./storage/uploads` | Ticket photo storage (outside `public/`) |
 | `COOKIE_SECURE` | prod: `true` | Set `false` only for plain-HTTP intranet hosting |
+| `APP_URL` | dev: `http://localhost:3000` | Public URL used in emailed links. **Required in production** |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | — | Any SMTP server, for "ลืมรหัสผ่าน" emails. Unset in dev → emails print to the server console |
+| `MAIL_FROM` | `SMTP_USER` | Sender address |
 
 ## Working together
 
