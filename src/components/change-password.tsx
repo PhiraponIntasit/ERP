@@ -4,7 +4,6 @@ import { changeOwnPassword } from '@/server/actions/auth';
 import { useAction } from './use-action';
 import { Dialog, Err } from './dialog';
 import { KeyIcon } from './icons';
-import { MIN_PASSWORD } from '@/lib/password';
 
 /** Sidebar button + dialog: signed-in users change their own password. */
 export function ChangePasswordButton() {
@@ -33,7 +32,7 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <div className="dialog-body">เมื่อเปลี่ยนแล้ว ระบบจะออกจากระบบในอุปกรณ์อื่นทั้งหมด ยกเว้นเครื่องนี้</div>
         <div className="field"><label htmlFor="cp-cur">รหัสผ่านปัจจุบัน</label><input id="cp-cur" className="input" type="password" autoComplete="current-password" value={f.current} onChange={set('current')} autoFocus /></div>
-        <div className="field"><label htmlFor="cp-new">รหัสผ่านใหม่ (อย่างน้อย {MIN_PASSWORD} ตัว)</label><input id="cp-new" className="input" type="password" autoComplete="new-password" value={f.next} onChange={set('next')} /></div>
+        <div className="field"><label htmlFor="cp-new">รหัสผ่านใหม่</label><input id="cp-new" className="input" type="password" autoComplete="new-password" value={f.next} onChange={set('next')} /></div>
         <div className="field"><label htmlFor="cp-cf">ยืนยันรหัสผ่านใหม่</label><input id="cp-cf" className="input" type="password" autoComplete="new-password" value={f.confirm} onChange={set('confirm')} /></div>
         <Err msg={error} />
         <div className="dialog-actions">

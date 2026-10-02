@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { db, nextSeq } from '../db';
 import { audit, requireAction } from '../auth';
 import { act, Fail, str } from '../act';
-import { passwordProblem } from '@/lib/password';
 import { ALL, ASSET_TYPES, DEPTS, EMP_F, isModule, isRole, MOD_LABEL, ROLE_LABEL, ROLE_PERMS } from '@/lib/domain';
 
 // ── employees ──
@@ -122,8 +121,7 @@ export async function createUser(f: Record<string, string>) {
     if (!name || !username) throw new Fail('กรอกชื่อและ Username');
     if (!/^[a-z0-9._-]{2,32}$/.test(username)) throw new Fail('Username ใช้ได้เฉพาะ a–z, 0–9, . _ - (2–32 ตัว)');
     if (await db.user.findUnique({ where: { username } })) throw new Fail('Username นี้ถูกใช้แล้ว');
-    const weak = passwordProblem(password);
-    if (weak) throw new Fail(weak);
+    if (password.length < 4) throw new Fail('รหัสผ่านอย่างน้อย 4 ตัวอักษร');
     if (empId) {
       if (!(await db.employee.findUnique({ where: { id: empId } }))) throw new Fail('ไม่พบพนักงาน');
       if (await db.user.findUnique({ where: { empId } })) throw new Fail('พนักงานคนนี้มีบัญชีผู้ใช้แล้ว');
@@ -144,8 +142,7 @@ export async function savePerms(userId: string, roleIn: string, permsIn: string[
     const np = ALL.filter(m => (permsIn ?? []).filter(isModule).includes(m));
     if (userId === me.id && !np.includes('users')) throw new Fail('ไม่สามารถถอดสิทธิ์จัดการผู้ใช้ของตัวเองได้');
     if (!np.length) throw new Fail('ต้องมีสิทธิ์อย่างน้อย 1 เมนู');
-    const weak = password ? passwordProblem(password) : null;
-    if (weak) throw new Fail(weak);
+    if (password && password.length < 4) throw new Fail('รหัสผ่านอย่างน้อย 4 ตัวอักษร');
     const u = await db.user.findUnique({ where: { id: userId } });
     if (!u) throw new Fail('ไม่พบผู้ใช้');
     const ch = [...np.filter(m => !u.perms.includes(m)).map(m => '+' + MOD_LABEL[m]), ...u.perms.filter(isModule).filter(m => !np.includes(m)).map(m => '−' + MOD_LABEL[m])];
