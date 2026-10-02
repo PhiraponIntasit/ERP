@@ -72,7 +72,7 @@
 ## ขั้นตอนทำงาน
 
 1. ทำบน branch ของตัวเอง ตั้งชื่อขึ้นต้นด้วย `a/` หรือ `b/` เช่น `a/mobile-ticket`, `b/pagination`
-2. ก่อนเปิด PR รัน `npm run lint` (typecheck) และเทสต์ของเมนูตัวเองให้ผ่าน
+2. ก่อนเปิด PR รัน `npm run lint` (typecheck) และ `npm run test:e2e` ให้ผ่าน (GitHub Actions รันชุดเทสต์ให้ทุก PR ด้วย)
 3. เปิด PR เข้า `main` แล้ว **ให้อีกคนรีวิวก่อน merge**
 4. ลบ branch หลัง merge แล้วเริ่มงานถัดไปจาก `main` ล่าสุด
 
@@ -88,3 +88,25 @@ npm run db:seed           # บัญชีตัวอย่างใช้ร�
 ```
 
 เมื่อ pull แล้วมี migration ใหม่: รัน `npm run db:migrate` หรือถ้าข้อมูลเพี้ยนให้ `npm run db:reset` (ลบข้อมูลทั้งหมดแล้ว seed ใหม่ — ใช้กับ DB ในเครื่องเท่านั้น)
+
+## เทสต์ (Playwright)
+
+```
+e2e/
+  helpers.ts        loginAs(), USERS (บัญชีตัวอย่าง), db (Prisma สำหรับเตรียมข้อมูล), pager()
+  a/                เทสต์ของคน A — *.mobile.spec.ts รันบนจอมือถือ (Pixel 7)
+  b/                เทสต์ของคน B
+```
+
+```bash
+npx playwright install chromium   # ครั้งแรกครั้งเดียว
+npm run test:e2e:fresh            # ล้าง DB ในเครื่อง + seed ใหม่ แล้วรันทั้งหมด (ลบข้อมูลทั้งหมด — ใช้กับ DB ในเครื่องเท่านั้น)
+npm run test:e2e                  # รันซ้ำโดยไม่ล้าง DB
+npx playwright test e2e/b         # รันเฉพาะของตัวเอง
+npx playwright test --ui          # โหมดดูทีละขั้น
+```
+
+กติกา:
+- เทสต์เริ่มจากข้อมูล seed เสมอ ถ้าเทสต์สร้างข้อมูลเพิ่มผ่าน `db` ให้ใส่ prefix เฉพาะ แล้วลบทิ้งใน `afterAll`
+- แต่ละคนแก้/เพิ่มเทสต์ในโฟลเดอร์ของตัวเอง ส่วน `helpers.ts` และ `playwright.config.ts` เป็นไฟล์ส่วนกลาง
+- ห้าม skip หรือปิดเทสต์ที่พังเพื่อให้ผ่าน — แก้สาเหตุ

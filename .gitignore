@@ -9,3 +9,7 @@ storage/
 AGENTS.md
 CLAUDE.md
 .env*.local
+
+# Playwright
+test-results/
+playwright-report/
