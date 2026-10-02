@@ -6,7 +6,12 @@
 | ฐานข้อมูล | Neon Postgres ผ่าน Vercel Marketplace (region `ap-southeast-1`) | มี point-in-time restore + dump รายวันด้วย GitHub Actions |
 | รูปแจ้งซ่อม | Vercel Blob แบบ **Private** | ดูรูปได้เฉพาะผ่าน `/api/files/[id]` ที่เช็กสิทธิ์ |
 
-> ⚠️ Vercel แพ็กเกจ Hobby (ฟรี) ใช้ได้เฉพาะงานส่วนตัว/ไม่เชิงพาณิชย์ — ระบบของบริษัทต้องใช้ **Pro**
+> แพ็กเกจที่ใช้: **Vercel Hobby (ฟรี) + Neon Free** — โปรเจกต์จบ (ไม่เชิงพาณิชย์) ใช้แพ็กเกจฟรีได้
+> ถ้าวันหนึ่งบริษัทจะใช้งานจริง ต้องอัปเกรดเป็น Vercel Pro (Hobby ห้ามใช้เชิงพาณิชย์)
+>
+> ข้อจำกัดของ Hobby: โปรเจกต์บน Vercel มีสมาชิกได้คนเดียว — ให้ **เจ้าของ repo (PhiraponIntasit) เป็นคน Import**
+> แล้วคนอื่นทำงานผ่าน GitHub ตามปกติ (push → เปิด PR → merge เข้า `main` → Vercel deploy ให้เอง)
+> ถ้า deploy ค้างเพราะ commit มาจากคนอื่น ให้เจ้าของโปรเจกต์กด Redeploy ในหน้า Vercel
 
 ## 1. สร้างโปรเจกต์
 
@@ -37,7 +42,7 @@ Project → Settings → Environment Variables (Production) — ดูราย�
 
 | ตัวแปร | ค่า |
 |---|---|
-| `SHOW_DEMO_ACCOUNTS` | `false` (ต้องเป็น false เสมอ) |
+| `SHOW_DEMO_ACCOUNTS` | `true` เฉพาะตอนนำเสนอที่ใช้ข้อมูลตัวอย่าง — ใช้งานจริงต้องเป็น `false` |
 | `DISPLAY_TZ` | `Asia/Bangkok` |
 | `APPROVAL_LIMIT`, `REORDER_FACTOR`, `DEFAULT_THEME` | ตามนโยบายบริษัท |
 
@@ -46,7 +51,13 @@ Project → Settings → Environment Variables (Production) — ดูราย�
 ## 5. Deploy + สร้าง Admin คนแรก
 
 1. กด **Deploy** (หรือ Redeploy) → migration รันอัตโนมัติ
-2. **ห้ามรัน `npm run db:seed` กับฐานข้อมูลจริง** (ข้อมูลตัวอย่าง + รหัส 1234) ให้รัน bootstrap แทน จากเครื่องตัวเอง:
+2. เลือกอย่างใดอย่างหนึ่ง:
+   - **สำหรับนำเสนอ/สอบโปรเจกต์** — ใส่ข้อมูลตัวอย่างได้ (บัญชีตัวอย่างรหัส 1234) และตั้ง `SHOW_DEMO_ACCOUNTS=true` ให้กรรมการกดเข้าแต่ละบทบาทได้ทันที:
+     ```bash
+     DATABASE_URL="<DATABASE_URL_UNPOOLED>" npm run db:seed
+     ```
+     seed ใช้กับฐานข้อมูลว่างเท่านั้น และวันที่ในข้อมูลตัวอย่างนับจากวันที่ seed — ถ้าอยากให้ SLA/กราฟ 7 วันดูสดตอนสอบ ให้สร้าง Neon branch ใหม่ (หรือ DB ใหม่) แล้ว migrate + seed ก่อนวันนำเสนอ 1–2 วัน
+   - **สำหรับใช้งานจริง** — **ห้าม seed** ให้รัน bootstrap แทน จากเครื่องตัวเอง:
    ```bash
    npx vercel link && npx vercel env pull .env.production.local --environment=production
    # เอา DATABASE_URL_UNPOOLED จากไฟล์นั้นมาใช้
@@ -82,7 +93,7 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
   ```
   ดึงเฉพาะรูปใหม่ (incremental) — ตั้งให้รันทุกวันบนเครื่องในออฟฟิศหรือ NAS ได้
 
-## Checklist ก่อนเปิดใช้งาน
+## Checklist ก่อนเปิดใช้งานจริง (ไม่ใช่รอบนำเสนอ)
 
 - [ ] `SHOW_DEMO_ACCOUNTS=false` และไม่ได้ seed ข้อมูลตัวอย่าง
 - [ ] Preview environment ไม่ได้ต่อกับ DB/Blob ของ production
