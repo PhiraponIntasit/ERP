@@ -6,6 +6,7 @@ import { logout } from '@/server/actions/auth';
 import { HDR, MOD_PATH, type Module } from '@/lib/domain';
 import { BellIcon, LogoutIcon } from './icons';
 import { ThemeToggle } from './theme-toggle';
+import { ChangePasswordButton } from './change-password';
 
 const moduleFor = (path: string) => (Object.entries(MOD_PATH) as [Module, string][]).find(([, p]) => path === p || path.startsWith(p + '/'))?.[0];
 
@@ -41,6 +42,7 @@ export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: s
             <div style={{ fontSize: 11, color: 'var(--color-neutral-700)' }}>{me.roleLabel} · {me.username}</div>
           </div>
         </div>
+        <ChangePasswordButton />
         <button className="btn btn-secondary" style={{ justifyContent: 'flex-start' }} disabled={pending} onClick={() => start(() => logout())}>
           <LogoutIcon /> ออกจากระบบ
         </button>
