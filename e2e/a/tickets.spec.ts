@@ -78,7 +78,7 @@ test('IT Support withdraws a part and resolves', async ({ browser }) => {
   expect((await db.inventoryItem.findUniqueOrThrow({ where: { sku: PART } })).qty).toBe(stockBefore - 1);
   expect(await db.stockMove.count({ where: { ref: tid, type: 'out', qty: 1 } })).toBe(1);
 
-  await card.getByLabel('สถานะ').selectOption('resolved');
+  await card.getByRole('radio', { name: 'แก้ไขเสร็จ' }).click();
   await card.getByLabel('บันทึกการทำงาน').fill('เปลี่ยนสายแล้ว');
   await card.getByRole('button', { name: 'อัปเดตสถานะ' }).click();
   await expect(card).toContainText('แก้ไขเสร็จ · รอยืนยัน');
