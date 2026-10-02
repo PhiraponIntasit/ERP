@@ -48,3 +48,7 @@
   .actions.withErr { flex-wrap: wrap; }
   .form .submit { flex: 1; padding: 13px 16px; }
 }
+
+/* asset tag + scan button */
+.assetRow { display: flex; gap: 8px; align-items: stretch; }
+.assetRow > :global(.input) { flex: 1; min-width: 0; }
