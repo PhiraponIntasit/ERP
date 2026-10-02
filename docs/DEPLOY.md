@@ -48,6 +48,17 @@ Project → Settings → Environment Variables (Production) — ดูราย�
 
 ไม่ต้องตั้ง `COOKIE_SECURE` และ `UPLOAD_DIR`
 
+**อีเมลสำหรับ "ลืมรหัสผ่าน"** — ถ้าไม่ตั้ง ปุ่มลืมรหัสผ่านจะส่งอีเมลไม่ได้ (ส่วนอื่นใช้งานได้ปกติ)
+
+| ตัวแปร | ค่า |
+|---|---|
+| `APP_URL` | URL ของเว็บ เช่น `https://erp-xxx.vercel.app` (หรือโดเมนบริษัทเมื่อผูกแล้ว) — ใช้สร้างลิงก์ในอีเมล |
+| `SMTP_HOST` / `SMTP_PORT` | Gmail: `smtp.gmail.com` / `587` · Office 365: `smtp.office365.com` / `587` · Resend: `smtp.resend.com` / `465` |
+| `SMTP_USER` / `SMTP_PASS` | บัญชีที่ใช้ส่ง — Gmail ต้องเปิด 2-Step Verification แล้วสร้าง **App password** (ใช้รหัสผ่านปกติไม่ได้) |
+| `MAIL_FROM` | ชื่อผู้ส่ง เช่น `Apex ERP <you@gmail.com>` (Gmail ต้องเป็นอีเมลเดียวกับ `SMTP_USER`) |
+
+ครั้งแรกที่ deploy ยังไม่รู้ URL — deploy ไปก่อน แล้วค่อยใส่ `APP_URL` ตาม URL ที่ได้ แล้วกด Redeploy
+
 ## 5. Deploy + สร้าง Admin คนแรก
 
 1. กด **Deploy** (หรือ Redeploy) → migration รันอัตโนมัติ
@@ -94,6 +105,8 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
   ดึงเฉพาะรูปใหม่ (incremental) — ตั้งให้รันทุกวันบนเครื่องในออฟฟิศหรือ NAS ได้
 
 ## Checklist ก่อนเปิดใช้งานจริง (ไม่ใช่รอบนำเสนอ)
+
+- [ ] ตั้ง `APP_URL` + SMTP แล้ว และลอง "ลืมรหัสผ่าน" กับบัญชีจริง 1 ครั้ง — ได้อีเมล และลิงก์ในอีเมลเปิดเว็บถูกโดเมน
 
 - [ ] `SHOW_DEMO_ACCOUNTS=false` และไม่ได้ seed ข้อมูลตัวอย่าง
 - [ ] Preview environment ไม่ได้ต่อกับ DB/Blob ของ production
