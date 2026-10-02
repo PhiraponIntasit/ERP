@@ -27,7 +27,7 @@ test('employee reports a problem with a photo', async ({ browser }) => {
   await page.getByRole('button', { name: 'สูง', exact: true }).click();
   await page.fill('#nt-title', TITLE);
   await page.fill('#nt-desc', 'จอกระพริบเป็นระยะ');
-  await page.setInputFiles('input[type=file]', { name: 'screen.png', mimeType: 'image/png', buffer: PNG });
+  await page.setInputFiles('input[aria-label="เลือกรูปภาพ"]', { name: 'screen.png', mimeType: 'image/png', buffer: PNG });
   await expect(page.getByRole('button', { name: 'ลบรูป' })).toHaveCount(1);
   await page.getByRole('button', { name: 'ส่งเรื่องแจ้งซ่อม' }).click();
   await expect(page).toHaveURL(/\/tickets\/mine/);
