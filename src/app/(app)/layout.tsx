@@ -1,13 +1,12 @@
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { allowedModules, getUser } from '@/server/auth';
+import { allowedModules, getUser, redirectToLogin } from '@/server/auth';
 import { shellData } from '@/server/queries';
 import { config, MOD_LABEL, MOD_PATH, ROLE_LABEL, type Role } from '@/lib/domain';
 import { Sidebar, Topbar } from '@/components/shell';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const me = await getUser();
-  if (!me) redirect('/login');
+  if (!me) return redirectToLogin();
   const { badges, notifs } = await shellData(me);
   const nav = allowedModules(me).map((m, i) => ({ key: m, num: String(i + 1).padStart(2, '0'), label: MOD_LABEL[m], href: MOD_PATH[m], badge: badges[m] || 0 }));
   const t = (await cookies()).get('erp_theme')?.value;
