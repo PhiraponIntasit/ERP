@@ -5,6 +5,7 @@ import { audit, requireAction } from '../auth';
 import { act, Fail, int, str } from '../act';
 import { MAX_IMAGE_BYTES, MAX_IMAGES, removeUpload, saveUpload, sniffImage } from '../uploads';
 import { CAT_LABEL, ST, URG, WORK_STATUSES } from '@/lib/domain';
+import { notifyAssigned, notifyClosed, notifyNewTicket, notifyReopened, notifyResolved } from '../notify';
 
 export async function createTicket(fd: FormData) {
   return act(async () => {
@@ -26,7 +27,7 @@ export async function createTicket(fd: FormData) {
         if (!mime) throw new Fail('รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WebP, GIF)');
         saved.push({ file: await saveUpload(buf, mime), mime, name: f.name.slice(0, 120), size: f.size });
       }
-      await db.$transaction(async tx => {
+      const id = await db.$transaction(async tx => {
         const id = 'TCK-' + (await nextSeq(tx, 'tck'));
         await tx.ticket.create({ data: {
           id, title, cat, urgency, assetTag, desc, requesterId: me.id, status: 'new',
@@ -34,7 +35,9 @@ export async function createTicket(fd: FormData) {
           history: { create: [{ text: 'เปิดคำร้อง', by: me.name }] },
         } });
         await audit(tx, me, 'ticket', 'เปิดคำร้อง', id, title + ' · ' + URG[urgency][0]);
+        return id;
       });
+      notifyNewTicket({ id, title, urgency }, me.id, me.name);
     } catch (e) {
       await Promise.all(saved.map(s => removeUpload(s.file)));
       throw e;
@@ -60,6 +63,7 @@ export async function assignTicket(tid: string, assigneeId: string) {
       } });
       await audit(tx, me, 'ticket', t.assignee ? 'เปลี่ยนผู้รับผิดชอบ' : 'มอบหมายงาน', tid, (t.assignee ? t.assignee.name + ' → ' : '') + tech.name);
     });
+    notifyAssigned(t, me.id, tech.id, me.name);
     return `มอบหมาย ${tid} ให้ ${tech.name} แล้ว`;
   });
 }
@@ -92,6 +96,7 @@ export async function updateTicketStatus(tid: string, status: string, rawNote: s
       if (changed) await audit(tx, me, 'ticket', 'อัปเดตสถานะ', tid, ST[t.status][0] + ' → ' + ST[status][0] + (note ? ' · ' + note : ''));
       else await audit(tx, me, 'ticket', 'บันทึกการทำงาน', tid, note);
     });
+    if (status === 'resolved' && t.status !== 'resolved') notifyResolved(t, me.id, me.name, note);
     return `อัปเดต ${tid} แล้ว`;
   });
 }
@@ -129,7 +134,7 @@ async function ownResolved(me: User, tid: string) {
 export async function confirmClose(tid: string, rating: number, rawNote: string) {
   return act(async () => {
     const me = await requireAction('my_tickets');
-    await ownResolved(me, tid);
+    const t = await ownResolved(me, tid);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Fail('กรุณาให้คะแนน 1–5 ดาว');
     const note = str(rawNote).slice(0, 1000);
     await db.$transaction(async tx => {
@@ -139,6 +144,7 @@ export async function confirmClose(tid: string, rating: number, rawNote: string)
       } });
       await audit(tx, me, 'ticket', 'ยืนยันปิดงาน', tid, `คะแนน ${rating}/5` + (note ? ' · ' + note : ''));
     });
+    notifyClosed(t, me.id, me.name, rating, note);
     return `ปิดงาน ${tid} แล้ว ขอบคุณครับ`;
   });
 }
@@ -146,7 +152,7 @@ export async function confirmClose(tid: string, rating: number, rawNote: string)
 export async function reopenTicket(tid: string) {
   return act(async () => {
     const me = await requireAction('my_tickets');
-    await ownResolved(me, tid);
+    const t = await ownResolved(me, tid);
     await db.$transaction(async tx => {
       await tx.ticket.update({ where: { id: tid }, data: {
         status: 'progress', resolvedAt: null,
@@ -154,6 +160,7 @@ export async function reopenTicket(tid: string) {
       } });
       await audit(tx, me, 'ticket', 'ปฏิเสธผลการซ่อม (เปิดงานต่อ)', tid);
     });
+    notifyReopened(t, me.id, me.name);
     return `ส่ง ${tid} กลับให้ช่างดำเนินการต่อแล้ว`;
   });
 }
