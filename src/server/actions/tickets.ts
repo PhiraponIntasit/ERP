@@ -5,6 +5,7 @@ import { audit, requireAction } from '../auth';
 import { act, Fail, int, str } from '../act';
 import { MAX_IMAGE_BYTES, MAX_IMAGES, removeUpload, saveUpload, sniffImage } from '../uploads';
 import { CAT_LABEL, ST, URG, WORK_STATUSES } from '@/lib/domain';
+import { canTakeWork } from '../assignable';
 import { notifyAssigned, notifyClosed, notifyNewTicket, notifyReopened, notifyResolved } from '../notify';
 
 export async function createTicket(fd: FormData) {
@@ -55,7 +56,7 @@ export async function assignTicket(tid: string, assigneeId: string) {
     if (t.status === 'closed') throw new Fail('งานนี้ปิดแล้ว');
     if (assigneeId === t.assigneeId) throw new Fail('งานนี้มอบหมายให้ช่างคนนี้อยู่แล้ว');
     const tech = await db.user.findUnique({ where: { id: assigneeId } });
-    if (!tech || tech.role !== 'itsupport' || !tech.active) throw new Fail('เลือกได้เฉพาะช่าง IT Support ที่ใช้งานอยู่');
+    if (!tech || !canTakeWork(tech)) throw new Fail('เลือกได้เฉพาะช่าง IT Support ที่ใช้งานอยู่และมีสิทธิ์รับงาน');
     await db.$transaction(async tx => {
       await tx.ticket.update({ where: { id: tid }, data: {
         assigneeId, status: t.status === 'new' ? 'assigned' : t.status,
@@ -104,7 +105,9 @@ export async function updateTicketStatus(tid: string, status: string, rawNote: s
 export async function withdrawPart(tid: string, sku: string, rawQty: string) {
   return act(async () => {
     const me = await requireAction('tickets_work');
-    await workTicket(me, tid);
+    const t = await workTicket(me, tid);
+    // Parts belong to the repair: once it's reported fixed, reopen it (status back to in progress) first
+    if (t.status === 'resolved') throw new Fail('งานนี้แจ้งว่าแก้ไขเสร็จแล้ว — เปลี่ยนสถานะกลับเป็น "กำลังทำ" ก่อนเบิกอะไหล่');
     const qty = int(rawQty);
     const it = await db.inventoryItem.findUnique({ where: { sku } });
     if (!it) throw new Fail('กรุณาเลือกสินค้า');

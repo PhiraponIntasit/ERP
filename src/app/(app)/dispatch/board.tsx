@@ -6,7 +6,7 @@ import { useAction } from '@/components/use-action';
 import { History, Thumbs, TicketBody, TicketHead } from '@/components/ticket-bits';
 import css from './dispatch.module.css';
 
-type Job = TicketView & { phone: string };
+type Job = TicketView & { phone: string; stuck: string };
 type Tech = { id: string; name: string; load: number };
 
 const ACTIVE = ['assigned', 'progress', 'waiting'];
@@ -14,6 +14,7 @@ const FILTERS: [string, string, (t: Job) => boolean][] = [
   ['all', 'ทั้งหมด', () => true],
   ['new', 'รอมอบหมาย', t => t.status === 'new'],
   ['overdue', 'เกิน SLA', t => t.overdue],
+  ['stuck', 'ต้องมอบหมายใหม่', t => !!t.stuck],
   ['active', 'กำลังดำเนินการ', t => ACTIVE.includes(t.status)],
   ['resolved', 'รอผู้แจ้งยืนยัน', t => t.status === 'resolved'],
   ['closed', 'ปิดแล้ว', t => t.status === 'closed'],
@@ -53,9 +54,9 @@ export function DispatchBoard({ tickets, techs }: { tickets: Job[]; techs: Tech[
 function DispatchCard({ t, techs }: { t: Job; techs: Tech[] }) {
   const [pick, setPick] = useState<string | null>(null);
   const { run, pending } = useAction({ errorAs: 'toast' });
-  const val = pick ?? (t.assigneeId || '');
+  const val = pick ?? (t.stuck ? '' : t.assigneeId || '');   // a stuck assignee isn't in the list any more
   const tel = t.phone.replace(/[^\d+]/g, '');
-  const hot = t.urgent || t.overdue;
+  const hot = t.urgent || t.overdue || !!t.stuck;
   return (
     <div className={`card tcard ${css.card}${hot ? ' ' + css.urgent : ''}`}>
       <TicketHead t={t} order="urg-first" />
@@ -71,7 +72,7 @@ function DispatchCard({ t, techs }: { t: Job; techs: Tech[] }) {
       </div>
       <Thumbs t={t} />
       <div className={`divider-top ${css.assign}`}>
-        <span className={css.owner}>ผู้รับผิดชอบ: <strong>{t.assigneeName}</strong></span>
+        <span className={css.owner}>ผู้รับผิดชอบ: <strong>{t.assigneeName}</strong>{t.stuck && <> <span className="tag tag-outline">{t.stuck}</span></>}</span>
         {t.status !== 'closed' && (
           <div className={css.assignRow}>
             <select className="input" value={val} aria-label="เลือกช่าง" onChange={e => setPick(e.target.value)}>
