@@ -4,6 +4,7 @@ import { deleteEmployee, handoverAsset, returnAsset, saveEmployee } from '@/serv
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { ASSET_TYPES, DEPTS } from '@/lib/domain';
+import { ScanButton } from '@/components/barcode-scanner';
 import css from '@/components/people-tables.module.css';
 
 type A = { tag: string; type: string; model: string };
@@ -98,10 +99,20 @@ function DelDialog({ emp, onClose }: { emp: Emp; onClose: () => void }) {
 
 function AssetsDialog({ emp, free, onClose }: { emp: Emp; free: A[]; onClose: () => void }) {
   const [f, setF] = useState({ type: 'Notebook', model: '', tag: '' });
+  const [note, setNote] = useState('');
   const give = useAction();
+  // A scanned sticker: a free device fills in its details; anything else just fills the tag
+  const onScan = (tag: string) => {
+    give.setError(''); setNote('');
+    const a = free.find(x => x.tag === tag);
+    if (a) return setF({ tag: a.tag, model: a.model, type: a.type });
+    setF(x => ({ ...x, tag, model: '' }));
+    if (emp.assets.some(x => x.tag === tag)) give.setError(`${tag} อยู่กับ ${emp.name} แล้ว`);
+    else setNote(`${tag} ไม่อยู่ในรายการอุปกรณ์ว่าง — ถ้าเป็นเครื่องใหม่ เลือกประเภทและกรอกรุ่นเพื่อลงทะเบียนพร้อมส่งมอบ`);
+  };
   const back = useAction({ errorAs: 'toast' });
   return (
-    <Dialog title={`อุปกรณ์ที่ถือครอง · ${emp.name}`} className={`w600 ${css.dlg}`} onClose={onClose}>
+    <Dialog title={`อุปกรณ์ที่ถือครอง · ${emp.name}`} className={`w800 ${css.dlg}`} onClose={onClose}>
       <div className="col">
         {emp.assets.map(a => (
           <div key={a.tag} className={css.held}>
@@ -114,15 +125,16 @@ function AssetsDialog({ emp, free, onClose }: { emp: Emp; free: A[]; onClose: ()
       {free.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>อุปกรณ์ว่างในทะเบียน — คลิกเพื่อเลือก:</span>
-          {free.map(a => <button key={a.tag} className="tag tag-outline" style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setF({ tag: a.tag, model: a.model, type: a.type }); give.setError(''); }}>{a.tag} · {a.model}</button>)}
+          {free.map(a => <button key={a.tag} className="tag tag-outline" style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setF({ tag: a.tag, model: a.model, type: a.type }); give.setError(''); setNote(''); }}>{a.tag} · {a.model}</button>)}
         </div>
       )}
       <div className={css.handover}>
         <div className="field"><label htmlFor="h-type">ประเภท</label><select id="h-type" className="input" value={f.type} onChange={e => setF(x => ({ ...x, type: e.target.value }))}>{ASSET_TYPES.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
         <div className="field"><label htmlFor="h-model">รุ่น</label><input id="h-model" className="input" value={f.model} onChange={e => setF(x => ({ ...x, model: e.target.value }))} placeholder="เช่น MacBook Air M3" /></div>
-        <div className="field"><label htmlFor="h-tag">Asset Tag</label><input id="h-tag" className="input" value={f.tag} onChange={e => setF(x => ({ ...x, tag: e.target.value }))} placeholder="NB-0130" /></div>
-        <button className="btn btn-primary" disabled={give.pending} onClick={() => give.run(() => handoverAsset(emp.id, f), () => setF(x => ({ ...x, model: '', tag: '' })))}>ส่งมอบ</button>
+        <div className="field"><label htmlFor="h-tag">Asset Tag</label><div className={css.tagRow}><input id="h-tag" className="input" value={f.tag} onChange={e => setF(x => ({ ...x, tag: e.target.value }))} placeholder="NB-0130" autoCapitalize="characters" autoCorrect="off" spellCheck={false} /><ScanButton onScan={onScan} /></div></div>
+        <button className="btn btn-primary" disabled={give.pending} onClick={() => give.run(() => handoverAsset(emp.id, f), () => { setF(x => ({ ...x, model: '', tag: '' })); setNote(''); })}>ส่งมอบ</button>
       </div>
+      {note && !give.error && <div className="dialog-body" role="status">{note}</div>}
       <Err msg={give.error} />
       <div className="dialog-actions"><button className="btn btn-secondary" onClick={onClose}>ปิด</button></div>
     </Dialog>
