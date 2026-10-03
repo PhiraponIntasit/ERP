@@ -1,6 +1,7 @@
 import 'server-only';
 import type { Prisma } from '@prisma/client';
 import { db, num } from './db';
+import { ACTIVE_WORK, ASSIGNABLE } from './assignable';
 import { CAT_LABEL, fmtD, fmtDT, PRST, slaOf, ST, STEP_IDX, STEPS, URG, VAT, baht, isPendingPR, canDecide, config } from '@/lib/domain';
 
 export const ticketInclude = {
@@ -61,8 +62,8 @@ export function prView(p: P, me: { id: string; role: string }, stock?: Map<strin
 export type PRView = ReturnType<typeof prView>;
 
 export async function techOptions() {
-  const techs = await db.user.findMany({ where: { role: 'itsupport', active: true }, orderBy: { id: 'asc' }, select: { id: true, name: true } });
-  const loads = await db.ticket.groupBy({ by: ['assigneeId'], where: { status: { in: ['assigned', 'progress', 'waiting'] }, assigneeId: { in: techs.map(t => t.id) } }, _count: true });
+  const techs = await db.user.findMany({ where: ASSIGNABLE, orderBy: { id: 'asc' }, select: { id: true, name: true } });
+  const loads = await db.ticket.groupBy({ by: ['assigneeId'], where: { status: { in: ACTIVE_WORK }, assigneeId: { in: techs.map(t => t.id) } }, _count: true });
   const load = new Map(loads.map(l => [l.assigneeId, l._count]));
   return techs.map(u => ({ id: u.id, name: u.name, load: load.get(u.id) ?? 0 }));
 }

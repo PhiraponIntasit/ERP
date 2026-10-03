@@ -2,6 +2,7 @@ import 'server-only';
 import type { User } from '@prisma/client';
 import { db } from './db';
 import { can } from './auth';
+import { STRANDED } from './assignable';
 import { canDecide, OPEN, slaOf } from '@/lib/domain';
 
 /** SKUs that already have a PR in flight (pending, pending_exec or approved) — never suggest re-ordering these. */
@@ -22,9 +23,10 @@ export async function shellData(me: User) {
   const badges: Record<string, number> = {};
   const notifs: { text: string; sub: string; href: string }[] = [];
 
-  const [newCount, overdueN, myAssigned, myOpenWork, low, pendingN, approvedMine, myResolved] = await Promise.all([
+  const [newCount, overdueN, strandedN, myAssigned, myOpenWork, low, pendingN, approvedMine, myResolved] = await Promise.all([
     can(me, 'dispatch') ? db.ticket.count({ where: { status: 'new' } }) : 0,
     can(me, 'dispatch') ? db.ticket.findMany({ where: { status: { in: OPEN } }, select: { created: true, urgency: true, status: true, resolvedAt: true } }).then(ts => ts.filter(t => slaOf(t).overdue).length) : 0,
+    can(me, 'dispatch') ? db.ticket.count({ where: STRANDED }) : 0,
     can(me, 'tickets_work') ? db.ticket.count({ where: { assigneeId: me.id, status: 'assigned' } }) : 0,
     can(me, 'tickets_work') ? db.ticket.count({ where: { status: { in: OPEN }, ...(isAdmin ? { assigneeId: { not: null } } : { assigneeId: me.id }) } }) : 0,
     can(me, 'inventory') ? lowStock() : null,
@@ -36,6 +38,7 @@ export async function shellData(me: User) {
   Object.assign(badges, { dispatch: newCount, tickets_work: myOpenWork, approvals: pendingN, inventory: lowNoPR.length, my_tickets: myResolved, purchase: approvedMine });
 
   if (newCount) notifs.push({ text: `คำร้องใหม่รอมอบหมาย ${newCount} งาน`, sub: 'ศูนย์มอบหมายงาน', href: '/dispatch' });
+  if (strandedN) notifs.push({ text: `งานค้างกับช่างที่รับงานไม่ได้แล้ว ${strandedN} งาน`, sub: 'บัญชีถูกระงับหรือถูกถอดสิทธิ์ — มอบหมายใหม่', href: '/dispatch' });
   if (overdueN) notifs.push({ text: `งานเกิน SLA ${overdueN} งาน`, sub: 'เร่งรัดผู้รับผิดชอบหรือมอบหมายใหม่', href: '/dispatch' });
   if (myAssigned) notifs.push({ text: `งานใหม่ที่ได้รับมอบหมาย ${myAssigned} งาน`, sub: 'งานที่ได้รับมอบหมาย', href: '/work' });
   if (lowNoPR.length) notifs.push({ text: `สินค้า ${lowNoPR.length} รายการต่ำกว่าจุดสั่งซื้อ`, sub: lowNoPR.map(i => i.name).join(', '), href: '/inventory' });

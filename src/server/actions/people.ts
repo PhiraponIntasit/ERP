@@ -1,8 +1,9 @@
 'use server';
 import bcrypt from 'bcryptjs';
 import { db, nextSeq } from '../db';
-import { audit, requireAction } from '../auth';
+import { audit, can, requireAction } from '../auth';
 import { act, Fail, str } from '../act';
+import { activeWorkOf, canTakeWork } from '../assignable';
 import { passwordProblem } from '@/lib/password';
 import { ALL, ASSET_TYPES, DEPTS, EMP_F, isModule, isRole, MOD_LABEL, ROLE_LABEL, ROLE_PERMS } from '@/lib/domain';
 
@@ -50,6 +51,10 @@ export async function deleteEmployee(empId: string) {
 
 // ── assets ──
 
+/** One rule for every place a new Asset Tag can be created. */
+const TAG_RE = /^[A-Z0-9._-]{1,32}$/;
+const TAG_RULE = 'Asset Tag ใช้ได้เฉพาะ A–Z, 0–9, . _ - (ไม่เกิน 32 ตัว)';
+
 /** Hand a device to an employee — picks an existing free asset by tag, or registers a new one. */
 export async function handoverAsset(empId: string, f: Record<string, string>) {
   return act(async () => {
@@ -62,6 +67,9 @@ export async function handoverAsset(empId: string, f: Record<string, string>) {
       let a = await tx.asset.findUnique({ where: { tag }, include: { holder: true } });
       if (a?.holderId) throw new Fail(`Asset ${tag} ถูกถือครองโดย ${a.holder?.name ?? a.holderId} อยู่แล้ว`);
       if (!a) {
+        // Registering a device is the asset register's job — same permission as the "ลงทะเบียนอุปกรณ์" button
+        if (!can(me, 'assets')) throw new Fail(`ไม่พบ ${tag} ในทะเบียน — ให้ผู้ดูแลทะเบียนทรัพย์สินลงทะเบียนก่อน`);
+        if (!TAG_RE.test(tag)) throw new Fail(TAG_RULE);
         const model = str(f.model), type = ASSET_TYPES.includes(str(f.type)) ? str(f.type) : 'Notebook';
         if (!model) throw new Fail('อุปกรณ์ใหม่ — กรอกรุ่นด้วย');
         a = await tx.asset.create({ data: { tag, type, model, history: { create: { text: 'ลงทะเบียนอุปกรณ์', by: me.name } } }, include: { holder: true } });
@@ -95,7 +103,7 @@ export async function registerAsset(f: Record<string, string>) {
     const me = await requireAction('assets');
     const tag = str(f.tag).toUpperCase(), model = str(f.model);
     if (!tag || !model) throw new Fail('กรอก Asset Tag และรุ่น');
-    if (!/^[A-Z0-9._-]{1,32}$/.test(tag)) throw new Fail('Asset Tag ใช้ได้เฉพาะ A–Z, 0–9, . _ -');
+    if (!TAG_RE.test(tag)) throw new Fail(TAG_RULE);
     if (await db.asset.findUnique({ where: { tag } })) throw new Fail('Asset Tag นี้มีในทะเบียนแล้ว');
     const type = ASSET_TYPES.includes(str(f.type)) ? str(f.type) : 'Notebook';
     const w = str(f.warranty);
@@ -154,13 +162,15 @@ export async function savePerms(userId: string, roleIn: string, permsIn: string[
     if (ch.length) parts.push(ch.join(', '));
     if (password) parts.push('รีเซ็ตรหัสผ่าน');
     const passwordHash = password ? await bcrypt.hash(password, 10) : undefined;
+    const losesWork = canTakeWork(u) && !canTakeWork({ ...u, role: roleIn, perms: np });
     await db.$transaction(async tx => {
       await tx.user.update({ where: { id: userId }, data: { role: roleIn, perms: np, ...(passwordHash ? { passwordHash } : {}) } });
       // A reset password signs the person out everywhere (except the admin doing it on themselves).
       if (passwordHash && userId !== me.id) await tx.session.deleteMany({ where: { userId } });
       await audit(tx, me, 'user', 'แก้ไขสิทธิ์ผู้ใช้', u.username, parts.join(' · ') || 'ไม่มีการเปลี่ยนแปลง');
     });
-    return 'บันทึกสิทธิ์แล้ว';
+    const left = losesWork ? await activeWorkOf(userId) : 0;
+    return left ? `บันทึกสิทธิ์แล้ว — ${u.name} รับงานซ่อมไม่ได้แล้ว แต่ยังมีงานค้าง ${left} งาน ให้ IT Manager มอบหมายใหม่` : 'บันทึกสิทธิ์แล้ว';
   });
 }
 
@@ -175,6 +185,8 @@ export async function toggleUserActive(userId: string) {
       if (u.active) await tx.session.deleteMany({ where: { userId } });
       await audit(tx, me, 'user', u.active ? 'ระงับบัญชี' : 'เปิดใช้บัญชี', u.username);
     });
+    const left = u.active ? await activeWorkOf(userId) : 0;
+    if (left) return `ระงับบัญชี ${u.username} แล้ว — ยังมีงานซ่อมค้าง ${left} งาน ให้ IT Manager มอบหมายใหม่`;
     return u.active ? `ระงับบัญชี ${u.username}` : `เปิดใช้บัญชี ${u.username}`;
   });
 }

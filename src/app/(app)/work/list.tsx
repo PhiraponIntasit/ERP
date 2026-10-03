@@ -62,7 +62,9 @@ function WorkCard({ t, showAssignee, onWithdraw }: { t: Job; showAssignee: boole
         <span className="muted">อะไหล่ที่เบิกแล้ว:</span>
         {t.parts.map(p => <span key={p} className="tag tag-neutral">{p}</span>)}
         {!t.parts.length && <span>—</span>}
-        <button className={`btn btn-ghost ${css.withdrawBtn}`} onClick={onWithdraw}>+ เบิกอะไหล่ / อุปกรณ์จากคลัง</button>
+        {t.status === 'resolved'
+          ? <span className={`muted ${css.withdrawBtn}`}>แจ้งว่าแก้ไขเสร็จแล้ว — เปลี่ยนเป็น “กำลังทำ” เพื่อเบิกเพิ่ม</span>
+          : <button className={`btn btn-ghost ${css.withdrawBtn}`} onClick={onWithdraw}>+ เบิกอะไหล่ / อุปกรณ์จากคลัง</button>}
       </div>
       <div className={`divider-top ${css.update}`}>
         <div className={css.statuses} role="radiogroup" aria-label="สถานะ">
