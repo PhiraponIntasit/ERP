@@ -34,6 +34,7 @@ To start over with fresh sample data, point `DATABASE_URL` at a new empty databa
 | `APP_URL` | dev: `http://localhost:3000` | Public URL used in emailed links. **Required in production** |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | — | Any SMTP server, for "ลืมรหัสผ่าน" emails. Unset in dev → emails print to the server console |
 | `MAIL_FROM` | `SMTP_USER` | Sender address |
+| `MAIL_OUTBOX_DIR` | dev: `./storage/outbox` | When there's no SMTP, emails are written here as JSON instead of sent (used by the e2e tests). Leave unset in production |
 
 ## Working together
 
