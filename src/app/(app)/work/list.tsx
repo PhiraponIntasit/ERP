@@ -5,6 +5,9 @@ import { updateTicketStatus, withdrawPart } from '@/server/actions/tickets';
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { History, Thumbs, TicketBody, TicketHead } from '@/components/ticket-bits';
+import { MAX_PHOTOS, shrink, type Img } from '@/components/photo-shrink';
+import { CameraIcon } from '@/components/category-icons';
+import { XIcon } from '@/components/icons';
 import css from './work.module.css';
 
 type Inv = { sku: string; name: string; qty: number; unit: string };
@@ -44,7 +47,19 @@ export function WorkList({ tickets, inv, showAssignee }: { tickets: Job[]; inv: 
 function WorkCard({ t, showAssignee, onWithdraw }: { t: Job; showAssignee: boolean; onWithdraw: () => void }) {
   const [status, setStatus] = useState(t.status);
   const [note, setNote] = useState('');
+  const [photos, setPhotos] = useState<Img[]>([]);
   const { run, pending } = useAction({ errorAs: 'toast' });
+  const addPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = [...(e.target.files ?? [])]; e.target.value = '';
+    const out = (await Promise.all(files.slice(0, MAX_PHOTOS - photos.length).map(shrink))).filter((x): x is Img => !!x);
+    setPhotos(cur => [...cur, ...out].slice(0, MAX_PHOTOS));
+  };
+  const dropPhoto = (i: number) => setPhotos(cur => { URL.revokeObjectURL(cur[i].src); return cur.filter((_, k) => k !== i); });
+  const save = () => {
+    let fd: FormData | undefined;
+    if (photos.length) { fd = new FormData(); photos.forEach((p, i) => fd!.append('photos', p.blob, `work-${i + 1}.jpg`)); }
+    run(() => updateTicketStatus(t.id, status, note, fd), () => { setNote(''); photos.forEach(p => URL.revokeObjectURL(p.src)); setPhotos([]); });
+  };
   const tel = t.phone.replace(/[^\d+]/g, '');
   return (
     <div className={`card tcard ${css.card}`}>
@@ -63,7 +78,7 @@ function WorkCard({ t, showAssignee, onWithdraw }: { t: Job; showAssignee: boole
         {t.parts.map(p => <span key={p} className="tag tag-neutral">{p}</span>)}
         {!t.parts.length && <span>—</span>}
         {t.status === 'resolved'
-          ? <span className={`muted ${css.withdrawBtn}`}>แจ้งว่าแก้ไขเสร็จแล้ว — เปลี่ยนเป็น “กำลังทำ” เพื่อเบิกเพิ่ม</span>
+          ? <span className={`muted ${css.withdrawNote}`}>แจ้งว่าแก้ไขเสร็จแล้ว — เปลี่ยนเป็น “กำลังทำ” เพื่อเบิกเพิ่ม</span>
           : <button className={`btn btn-ghost ${css.withdrawBtn}`} onClick={onWithdraw}>+ เบิกอะไหล่ / อุปกรณ์จากคลัง</button>}
       </div>
       <div className={`divider-top ${css.update}`}>
@@ -74,9 +89,23 @@ function WorkCard({ t, showAssignee, onWithdraw }: { t: Job; showAssignee: boole
             </button>
           ))}
         </div>
+        <div className={css.photoRow}>
+          {photos.map((p, i) => (
+            <div key={p.src} className={css.photo}>
+              <div className="plate plate-img" style={{ backgroundImage: `url(${p.src})` }} />
+              <button type="button" className={css.photoX} onClick={() => dropPhoto(i)} aria-label={`ลบรูปที่ ${i + 1}`}><XIcon size={12} /></button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <label className={`btn btn-secondary ${css.addPhoto}`}>
+              <CameraIcon size={16} /> แนบรูป{photos.length ? ` (${photos.length}/${MAX_PHOTOS})` : ''}
+              <input type="file" accept="image/*" multiple onChange={addPhotos} hidden aria-label="แนบรูปการทำงาน" />
+            </label>
+          )}
+        </div>
         <div className={css.noteRow}>
           <input className="input" value={note} onChange={e => setNote(e.target.value)} maxLength={1000} placeholder="บันทึกการทำงาน (ถ้ามี)" aria-label="บันทึกการทำงาน" enterKeyHint="done" />
-          <button className={`btn btn-primary ${css.save}`} disabled={pending} onClick={() => run(() => updateTicketStatus(t.id, status, note), () => setNote(''))}>อัปเดตสถานะ</button>
+          <button className={`btn btn-primary ${css.save}`} disabled={pending} onClick={save}>อัปเดตสถานะ</button>
         </div>
       </div>
       <History t={t} />

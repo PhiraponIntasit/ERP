@@ -8,11 +8,19 @@
 .call { flex: none; gap: 6px; }
 .parts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
 .withdrawBtn { margin-left: auto; }
+.withdrawNote { margin-left: auto; font-size: 12px; }
 .update { display: flex; flex-direction: column; gap: 8px; }
 .statuses { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .card .statuses > button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 6px; }
 .now { font-size: 10px; letter-spacing: .06em; color: var(--color-neutral-700); }
 .noteRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+/* work photos picked for the next update */
+.photoRow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.photo { position: relative; width: 72px; height: 54px; }
+.photo > :global(.plate) { width: 100%; height: 100%; }
+.photoX { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--color-divider); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+.addPhoto { gap: 6px; }
 .stock { font-size: 12px; color: var(--color-neutral-700); margin-top: 6px; }
 .stepper { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; }
 .stepper > button { padding: 0; font-size: 20px; }
@@ -23,11 +31,15 @@
   .filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4) 4px; scrollbar-width: none; }
   .filters::-webkit-scrollbar { display: none; }
   .call { min-height: 44px; padding-inline: 16px; }
+  .withdrawNote { margin-left: 0; flex-basis: 100%; }
   .withdrawBtn { margin-left: 0; width: 100%; justify-content: center; border: 1px dashed var(--color-accent); min-height: 44px; }
   .statuses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card .statuses > button { min-height: 52px; font-size: 14px; }
   .noteRow { grid-template-columns: 1fr; }
   .save { min-height: 48px; font-size: 16px; }
+  .addPhoto { min-height: 44px; }
+  .photo { width: 84px; height: 63px; }
+  .photoX { width: 28px; height: 28px; top: -8px; right: -8px; }
   /* 16px stops iOS Safari from zooming into a field on focus */
   .card :global(.input), .dlg :global(.input) { font-size: 16px; min-height: 44px; }
   .stepper > button { min-height: 44px; }

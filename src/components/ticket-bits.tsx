@@ -39,17 +39,30 @@ export function Steps({ t }: { t: TicketView }) {
   );
 }
 
+type Im = TicketView['imgs'][number];
+const Pics = ({ imgs, small = false }: { imgs: Im[]; small?: boolean }) => (
+  <div className={css.pics}>
+    {imgs.map(im => (
+      <a key={im.id} href={im.src} target="_blank" rel="noreferrer" title={im.name}>
+        <div className={`plate plate-img thumb${small ? ' ' + css.small : ''}`} style={{ backgroundImage: `url(${im.src})` }} />
+      </a>
+    ))}
+  </div>
+);
+
+/** The requester's photos, then the technician's (before / after the repair) under their own label. */
 export function Thumbs({ t }: { t: TicketView }) {
+  const report = t.imgs.filter(i => i.kind !== 'work'), work = t.imgs.filter(i => i.kind === 'work');
   if (!t.imgs.length) return null;
-  return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {t.imgs.map(im => (
-        <a key={im.id} href={im.src} target="_blank" rel="noreferrer" title={im.name}>
-          <div className="plate plate-img thumb" style={{ backgroundImage: `url(${im.src})` }} />
-        </a>
-      ))}
-    </div>
-  );
+  return (<>
+    {report.length > 0 && <Pics imgs={report} />}
+    {work.length > 0 && (
+      <div className={css.workPics} role="group" aria-label="รูปจากช่าง">
+        <span className={css.picsLabel}>รูปจากช่าง ({work.length})</span>
+        <Pics imgs={work} />
+      </div>
+    )}
+  </>);
 }
 
 export function History({ t }: { t: TicketView }) {
@@ -58,7 +71,8 @@ export function History({ t }: { t: TicketView }) {
       <summary style={{ cursor: 'pointer', color: 'var(--color-accent-700)' }}>ประวัติการดำเนินงาน ({t.history.length})</summary>
       <div style={{ display: 'flex', flexDirection: 'column', marginTop: 8 }}>
         {t.history.map((h, i) => (
-          <div key={i} className="hist-row"><span className="muted tnum">{h.tText}</span><span>{h.text} — {h.by}</span></div>
+          <div key={i} className="hist-row"><span className="muted tnum">{h.tText}</span><span>{h.text} — {h.by}
+            {t.imgs.some(im => im.eventId === h.id) && <Pics imgs={t.imgs.filter(im => im.eventId === h.id)} small />}</span></div>
         ))}
       </div>
     </details>
