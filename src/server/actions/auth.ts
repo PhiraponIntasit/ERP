@@ -2,7 +2,7 @@
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { db } from '../db';
-import { audit, createSession, currentSessionId, destroySession, getUser, homePath, requireAction } from '../auth';
+import { audit, createSession, currentSessionId, destroySession, getUser, nextPath, requireAction } from '../auth';
 import { act, Fail } from '../act';
 import { passwordProblem } from '@/lib/password';
 import { config } from '@/lib/domain';
@@ -10,7 +10,7 @@ import { config } from '@/lib/domain';
 // Compared against when the username does not exist, so response time doesn't reveal valid usernames.
 const DUMMY_HASH = '$2b$10$Yee5ByqkJor3C71/w2n6z.guuXTlLPw97EUeCEWJuH52ntC7180X2';
 
-async function doLogin(rawU: string, p: string): Promise<{ error: string }> {
+async function doLogin(rawU: string, p: string, next: unknown): Promise<{ error: string }> {
   const u = rawU.trim().toLowerCase();
   const user = u ? await db.user.findUnique({ where: { username: u } }) : null;
   const ok = await bcrypt.compare(p, user?.passwordHash ?? DUMMY_HASH);
@@ -24,17 +24,17 @@ async function doLogin(rawU: string, p: string): Promise<{ error: string }> {
   }
   await createSession(user.id);
   await audit(db, user, 'auth', 'เข้าสู่ระบบ', user.username);
-  redirect(homePath(user));
+  redirect(nextPath(user, next));
 }
 
 export async function login(_prev: { error: string }, fd: FormData) {
-  return doLogin(String(fd.get('u') ?? ''), String(fd.get('p') ?? ''));
+  return doLogin(String(fd.get('u') ?? ''), String(fd.get('p') ?? ''), fd.get('next'));
 }
 
 /** One-click demo sign-in (only when SHOW_DEMO_ACCOUNTS=true). Uses the seeded demo password. */
-export async function demoLogin(username: string) {
+export async function demoLogin(username: string, next?: string) {
   if (!config.showDemo()) return { error: 'ปิดการใช้งานบัญชีทดลอง' };
-  return doLogin(username, '1234');
+  return doLogin(username, '1234', next);
 }
 
 export async function logout() {

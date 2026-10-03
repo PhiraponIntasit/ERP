@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createHash, randomBytes } from 'node:crypto';
 import type { User } from '@prisma/client';
@@ -51,10 +51,29 @@ export const can = (u: User | null, m: Module) => !!(u && u.active && u.perms.in
 export const allowedModules = (u: User) => ALL.filter(m => can(u, m));
 export const homePath = (u: User) => { const m = allowedModules(u)[0]; return m ? MOD_PATH[m] : '/login'; };
 
+/** Where to go after login: `raw` only if it is one of the app's own pages that `u` may open
+ *  (never another site, never a page they'd just be bounced from), otherwise their home page. */
+export function nextPath(u: User, raw: unknown): string {
+  if (typeof raw === 'string' && raw.startsWith('/') && raw.length <= 512) {
+    try {
+      const url = new URL(raw, 'http://erp.invalid');
+      const m = ALL.find(k => MOD_PATH[k] === url.pathname);
+      if (url.origin === 'http://erp.invalid' && m && can(u, m)) return url.pathname + url.search;
+    } catch { /* not a URL — fall through */ }
+  }
+  return homePath(u);
+}
+
+/** Signed-out: go to login, remembering the page that was asked for (set by src/proxy.ts). */
+export async function redirectToLogin(): Promise<never> {
+  const from = (await headers()).get('x-erp-path');
+  redirect(from && from.startsWith('/') && !from.startsWith('//') ? `/login?next=${encodeURIComponent(from)}` : '/login');
+}
+
 /** For pages: must be signed in and hold `m`, otherwise bounce. */
 export async function requirePage(m: Module): Promise<User> {
   const u = await getUser();
-  if (!u) redirect('/login');
+  if (!u) return redirectToLogin();
   if (!can(u, m)) redirect(homePath(u));
   return u;
 }
