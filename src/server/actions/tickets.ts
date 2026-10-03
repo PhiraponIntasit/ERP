@@ -11,7 +11,7 @@ import { notifyAssigned, notifyClosed, notifyNewTicket, notifyReopened, notifyRe
 export async function createTicket(fd: FormData) {
   return act(async () => {
     const me = await requireAction('ticket_new');
-    const title = str(fd.get('title')), desc = str(fd.get('desc')), assetTag = str(fd.get('assetTag')).slice(0, 40);
+    const title = str(fd.get('title')), desc = str(fd.get('desc')), assetTag = str(fd.get('assetTag')).toUpperCase().slice(0, 40);
     const cat = str(fd.get('cat')), urgency = str(fd.get('urgency'));
     if (!title || !desc) throw new Fail('กรุณากรอกหัวข้อและรายละเอียดปัญหา');
     if (!CAT_LABEL[cat] || !URG[urgency]) throw new Fail('ข้อมูลประเภทหรือความเร่งด่วนไม่ถูกต้อง');
@@ -45,6 +45,17 @@ export async function createTicket(fd: FormData) {
     }
     return 'ส่งคำร้องแจ้งซ่อมแล้ว — IT Manager จะมอบหมายช่างให้';
   });
+}
+
+/** "แจ้งปัญหา" form: is this tag in the asset register? Only the device's type and model are revealed —
+ *  never who holds it, unless it's the person asking. Not finding it doesn't block the report
+ *  (some kit, e.g. shared access points, isn't registered). */
+export async function lookupAsset(raw: string): Promise<{ tag: string; found: boolean; type?: string; model?: string; mine?: boolean }> {
+  const me = await requireAction('ticket_new');
+  const tag = str(raw).toUpperCase().slice(0, 40);
+  const a = tag ? await db.asset.findUnique({ where: { tag }, select: { type: true, model: true, holderId: true } }) : null;
+  if (!a) return { tag, found: false };
+  return { tag, found: true, type: a.type, model: a.model, mine: !!me.empId && a.holderId === me.empId };
 }
 
 export async function assignTicket(tid: string, assigneeId: string) {

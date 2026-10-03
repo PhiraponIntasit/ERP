@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { readdirSync, readFileSync, rmSync } from 'node:fs';
+import { readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { db, USERS } from '../helpers';
 import { as } from './util';
@@ -10,11 +10,14 @@ const OUTBOX = path.resolve(process.env.MAIL_OUTBOX_DIR || './storage/outbox');
 const P = 'E2E-NTF';
 type Mail = { to: string; subject: string; text: string; file: string };
 const seen: string[] = [];
+// Ticket numbers restart with every fresh database while the outbox folder stays, so only count emails from this run
+const since = Date.now() - 1000;
 
 function mailsFor(id: string): Mail[] {
   let files: string[] = [];
   try { files = readdirSync(OUTBOX).filter(f => f.endsWith('.json')); } catch { return []; }
-  return files.map(f => ({ ...JSON.parse(readFileSync(path.join(OUTBOX, f), 'utf8')), file: f }) as Mail).filter(m => m.subject.includes(id));
+  return files.filter(f => statSync(path.join(OUTBOX, f)).mtimeMs >= since)
+    .map(f => ({ ...JSON.parse(readFileSync(path.join(OUTBOX, f), 'utf8')), file: f }) as Mail).filter(m => m.subject.includes(id));
 }
 /** Waits for exactly `n` emails about ticket `id` whose subject contains `about` (they're sent just after the response). */
 async function expectMails(id: string, about: string, n: number) {

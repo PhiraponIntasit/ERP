@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createTicket } from '@/server/actions/tickets';
+import { createTicket, lookupAsset } from '@/server/actions/tickets';
 import { useAction } from '@/components/use-action';
 import { ImagePlusIcon, XIcon } from '@/components/icons';
 import { CameraIcon, CategoryIcon, GalleryIcon, SendIcon } from '@/components/category-icons';
@@ -39,6 +39,17 @@ export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: strin
   const { run, pending, error, setError } = useAction();
   const toast = useToast();
   const set = (k: keyof typeof blank, v: string) => setNt(x => ({ ...x, [k]: v }));
+
+  // Check the Asset Tag against the register while typing / after a scan (debounced)
+  const tagNow = nt.assetTag.trim().toUpperCase();
+  const [asset, setAsset] = useState<Awaited<ReturnType<typeof lookupAsset>> | null>(null);
+  useEffect(() => {
+    if (!tagNow) return;
+    let live = true;
+    const t = setTimeout(() => lookupAsset(tagNow).then(r => { if (live) setAsset(r); }, () => {}), 350);
+    return () => { live = false; clearTimeout(t); };
+  }, [tagNow]);
+  const shown = asset && asset.tag === tagNow ? asset : null;   // never show a result for an older value
 
   const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = [...(e.target.files ?? [])]; e.target.value = '';
@@ -83,6 +94,10 @@ export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: strin
         <div className={css.assetRow}>
           <input id="nt-asset" className="input" value={nt.assetTag} onChange={e => set('assetTag', e.target.value)} maxLength={40} placeholder="เช่น NB-0077" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
           <ScanButton onScan={tag => { set('assetTag', tag); toast(`สแกนได้: ${tag}`); }} />
+        </div>
+        <div className={css.assetCheck} aria-live="polite">
+          {shown?.found && <span className={css.assetOk}>✓ {shown.type} · {shown.model}{shown.mine ? ' — เครื่องที่คุณถือครอง' : ''}</span>}
+          {shown && !shown.found && <span className={css.assetWarn}>ไม่พบ {shown.tag} ในทะเบียนทรัพย์สิน — ตรวจตัวสะกดอีกครั้ง หรือส่งได้เลย ทีม IT จะตรวจสอบให้</span>}
         </div>
         {myAssets.length > 0 && (
           <div className={css.chips}>

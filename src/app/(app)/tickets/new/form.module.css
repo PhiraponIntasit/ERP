@@ -52,3 +52,7 @@
 /* asset tag + scan button */
 .assetRow { display: flex; gap: 8px; align-items: stretch; }
 .assetRow > :global(.input) { flex: 1; min-width: 0; }
+.assetCheck { font-size: 13px; margin-top: 6px; min-height: 1em; }
+.assetCheck:empty { display: none; }
+.assetOk { color: var(--color-accent-700); }
+.assetWarn { color: var(--color-accent-800); border-left: 2px solid var(--color-accent); padding-left: 8px; display: block; }
