@@ -5,6 +5,7 @@ import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { MIN_PASSWORD } from '@/lib/password';
 import { ALL, MOD_LABEL, ROLE_PERMS, ROLES, type Module, type Role } from '@/lib/domain';
+import css from '@/components/people-tables.module.css';
 
 type U = { id: string; name: string; username: string; role: string; roleLabel: string; perms: string[]; active: boolean; custom: boolean; empText: string };
 
@@ -13,22 +14,22 @@ export function UsersView({ users, emps, meId }: { users: U[]; emps: { id: strin
   const { run, pending } = useAction({ errorAs: 'toast' });
   return (
     <div className="anim-page stack-4">
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <p className="lead" style={{ flex: 1, minWidth: 300 }}>บัญชีใหม่จะได้รับสิทธิ์เริ่มต้นตามบทบาท จากนั้นปรับสิทธิ์รายบุคคลได้ที่ “กำหนดสิทธิ์”</p>
+      <div className={`toolbar ${css.toolbar}`}>
+        <p className="lead" style={{ flex: 1, minWidth: 0 }}>บัญชีใหม่จะได้รับสิทธิ์เริ่มต้นตามบทบาท จากนั้นปรับสิทธิ์รายบุคคลได้ที่ “กำหนดสิทธิ์”</p>
         <button className="btn btn-primary" onClick={() => setDlg({ type: 'new' })}>+ สร้างบัญชีผู้ใช้</button>
       </div>
       <div className="scroll-x">
-        <table className="table">
+        <table className={`table ${css.cards}`}>
           <thead><tr><th>ผู้ใช้</th><th>Username</th><th>บทบาท</th><th>สิทธิ์ที่เข้าถึง</th><th>สถานะ</th><th className="r">จัดการ</th></tr></thead>
           <tbody>
             {users.map(u => (
               <tr key={u.id} style={{ opacity: u.active ? 1 : 0.55 }}>
-                <td>{u.name}<div style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>{u.empText}</div></td>
-                <td style={{ fontSize: 13 }}>{u.username}</td>
-                <td><span className="tag tag-outline">{u.roleLabel}</span>{u.custom && <span style={{ fontSize: 11, color: 'var(--color-accent-700)', marginLeft: 6 }}>ปรับรายบุคคล</span>}</td>
-                <td style={{ fontSize: 12, maxWidth: 320, color: 'var(--color-neutral-700)' }}>{u.perms.map(p => MOD_LABEL[p as Module] ?? p).join(', ')}</td>
-                <td><span className={`tag ${u.active ? 'tag-accent' : 'tag-neutral'}`}>{u.active ? 'ใช้งาน' : 'ระงับ'}</span></td>
-                <td className="r"><div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                <td className={css.main}>{u.name}<div style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>{u.empText}</div></td>
+                <td data-label="Username" style={{ fontSize: 13 }}>{u.username}</td>
+                <td data-label="บทบาท"><span><span className="tag tag-outline">{u.roleLabel}</span>{u.custom && <span style={{ fontSize: 11, color: 'var(--color-accent-700)', marginLeft: 6 }}>ปรับรายบุคคล</span>}</span></td>
+                <td data-label="สิทธิ์" style={{ fontSize: 12, maxWidth: 320, color: 'var(--color-neutral-700)' }}>{u.perms.map(p => MOD_LABEL[p as Module] ?? p).join(', ')}</td>
+                <td className={css.side}><span className={`tag ${u.active ? 'tag-accent' : 'tag-neutral'}`}>{u.active ? 'ใช้งาน' : 'ระงับ'}</span></td>
+                <td className={`r ${css.actions}`}><div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button className="btn btn-ghost" onClick={() => setDlg({ type: 'perms', u })}>กำหนดสิทธิ์</button>
                   {u.id !== meId && <button className="btn btn-ghost" style={{ color: 'var(--color-neutral-700)' }} disabled={pending} onClick={() => run(() => toggleUserActive(u.id))}>{u.active ? 'ระงับ' : 'เปิดใช้'}</button>}
                 </div></td>
@@ -39,7 +40,7 @@ export function UsersView({ users, emps, meId }: { users: U[]; emps: { id: strin
       </div>
       <h3 className="section-h" style={{ marginTop: 'var(--space-4)' }}>สิทธิ์เริ่มต้นตามบทบาท (RBAC)</h3>
       <div className="scroll-x">
-        <table className="table">
+        <table className={`table ${css.matrix}`}>
           <thead><tr><th>เมนู / ฟังก์ชัน</th>{ROLES.map(([, l]) => <th key={l} style={{ textAlign: 'center' }}>{l}</th>)}</tr></thead>
           <tbody>
             {ALL.map(m => (
@@ -59,7 +60,7 @@ function NewUserDialog({ emps, onClose }: { emps: { id: string; name: string }[]
   const { run, pending, error } = useAction();
   const set = (k: string, v: string) => setF(x => ({ ...x, [k]: v }));
   return (
-    <Dialog title="สร้างบัญชีผู้ใช้" className="w560" onClose={onClose}>
+    <Dialog title="สร้างบัญชีผู้ใช้" className={`w560 ${css.dlg}`} onClose={onClose}>
       <div className="grid2">
         <div className="field full"><label htmlFor="nu-emp">เชื่อมกับพนักงาน</label>
           <select id="nu-emp" className="input" value={f.empId} onChange={e => { const v = e.target.value; const emp = emps.find(x => x.id === v); setF(x => ({ ...x, empId: v, name: emp ? emp.name : x.name })); }}>
@@ -87,7 +88,7 @@ function PermsDialog({ u, onClose }: { u: U; onClose: () => void }) {
   const [password, setPassword] = useState('');
   const { run, pending, error } = useAction();
   return (
-    <Dialog title={`กำหนดสิทธิ์ · ${u.name}`} className="w560" onClose={onClose}>
+    <Dialog title={`กำหนดสิทธิ์ · ${u.name}`} className={`w560 ${css.dlg}`} onClose={onClose}>
       <div className="field"><label htmlFor="pm-r">บทบาท (เปลี่ยนแล้วสิทธิ์จะรีเซ็ตเป็นค่าเริ่มต้นของบทบาท)</label>
         <select id="pm-r" className="input" value={role} onChange={e => { const r = e.target.value as Role; setRole(r); setPerms([...ROLE_PERMS[r]]); }}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
       </div>

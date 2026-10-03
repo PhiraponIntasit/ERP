@@ -4,6 +4,7 @@ import { deleteEmployee, handoverAsset, returnAsset, saveEmployee } from '@/serv
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { ASSET_TYPES, DEPTS } from '@/lib/domain';
+import css from '@/components/people-tables.module.css';
 
 type A = { tag: string; type: string; model: string };
 type Emp = { id: string; name: string; position: string; dept: string; email: string; phone: string; assets: A[] };
@@ -17,30 +18,32 @@ export function EmployeesView({ emps, free }: { emps: Emp[]; free: A[] }) {
   const close = () => setDlg(null);
   return (
     <div className="anim-page stack-4">
-      <div className="toolbar">
-        <input className="input" style={{ maxWidth: 320 }} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ, รหัส, อีเมล, Asset Tag" aria-label="ค้นหาพนักงาน" />
-        {['all', ...DEPTS].map(d => (
-          <button key={d} className={`chip sm${dept === d ? ' on' : ''}`} aria-pressed={dept === d} onClick={() => setDept(d)}>
-            {d === 'all' ? `ทั้งหมด (${emps.length})` : `${d} (${emps.filter(e => e.dept === d).length})`}
-          </button>
-        ))}
+      <div className={`toolbar ${css.toolbar}`}>
+        <input className={`input ${css.search}`} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาชื่อ, รหัส, อีเมล, Asset Tag" aria-label="ค้นหาพนักงาน" />
+        <div className={css.chips} role="group" aria-label="กรองตามแผนก">
+          {['all', ...DEPTS].map(d => (
+            <button key={d} className={`chip sm${dept === d ? ' on' : ''}`} aria-pressed={dept === d} onClick={() => setDept(d)}>
+              {d === 'all' ? `ทั้งหมด (${emps.length})` : `${d} (${emps.filter(e => e.dept === d).length})`}
+            </button>
+          ))}
+        </div>
         <button className="btn btn-primary ml-auto" onClick={() => setDlg({ type: 'emp', emp: null })}>+ เพิ่มพนักงาน</button>
       </div>
       <div className="scroll-x">
-        <table className="table">
+        <table className={`table ${css.cards}`}>
           <thead><tr><th>พนักงาน</th><th>รหัส</th><th>แผนก</th><th>ติดต่อ</th><th>อุปกรณ์ที่ถือครอง</th><th className="r">จัดการ</th></tr></thead>
           <tbody>
             {rows.map(e => (
               <tr key={e.id}>
-                <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="avatar sm">{e.name.charAt(0)}</span><div><div>{e.name}</div><div style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>{e.position}</div></div></div></td>
-                <td className="tnum" style={{ fontSize: 13 }}>{e.id}</td>
-                <td style={{ fontSize: 13 }}>{e.dept}</td>
-                <td style={{ fontSize: 12 }}><div>{e.email}</div><div className="muted tnum">{e.phone}</div></td>
-                <td><div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 320 }}>
+                <td className={css.main}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="avatar sm">{e.name.charAt(0)}</span><div><div>{e.name}</div><div style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>{e.position}</div></div></div></td>
+                <td className={`tnum ${css.side}`} style={{ fontSize: 13 }}>{e.id}</td>
+                <td data-label="แผนก" style={{ fontSize: 13 }}>{e.dept}</td>
+                <td data-label="ติดต่อ" style={{ fontSize: 12 }}><div><div>{e.email}</div>{e.phone && <a className={`muted tnum ${css.phone}`} href={`tel:${e.phone.replace(/[^\d+]/g, '')}`}>{e.phone}</a>}</div></td>
+                <td data-label="อุปกรณ์"><div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 320 }}>
                   {e.assets.map(a => <span key={a.tag} className="tag tag-neutral" title={a.tag}>{a.type} · {a.model}</span>)}
                   {!e.assets.length && <span style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>ไม่มี</span>}
                 </div></td>
-                <td className="r"><div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                <td className={`r ${css.actions}`}><div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button className="btn btn-ghost" onClick={() => setDlg({ type: 'assets', empId: e.id })}>อุปกรณ์ ({e.assets.length})</button>
                   <button className="btn btn-ghost" onClick={() => setDlg({ type: 'emp', emp: e })}>แก้ไข</button>
                   <button className="btn btn-ghost" style={{ color: 'var(--color-neutral-700)' }} onClick={() => setDlg({ type: 'del', emp: e })}>ลบ</button>
@@ -62,7 +65,7 @@ function EmpDialog({ emp, onClose }: { emp: Emp | null; onClose: () => void }) {
   const { run, pending, error } = useAction();
   const inp = (k: string, label: string, cls = '') => <div className={`field ${cls}`}><label htmlFor={'e-' + k}>{label}</label><input id={'e-' + k} className="input" value={f[k] ?? ''} onChange={e => setF(x => ({ ...x, [k]: e.target.value }))} /></div>;
   return (
-    <Dialog title={emp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงาน'} className="w560" onClose={onClose}>
+    <Dialog title={emp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงาน'} className={`w560 ${css.dlg}`} onClose={onClose}>
       <div className="grid2">
         {inp('name', 'ชื่อ-นามสกุล', 'full')}
         {inp('position', 'ตำแหน่ง')}
@@ -82,7 +85,7 @@ function EmpDialog({ emp, onClose }: { emp: Emp | null; onClose: () => void }) {
 function DelDialog({ emp, onClose }: { emp: Emp; onClose: () => void }) {
   const { run, pending, error } = useAction();
   return (
-    <Dialog title="ลบข้อมูลพนักงาน" onClose={onClose}>
+    <Dialog title="ลบข้อมูลพนักงาน" className={css.dlg} onClose={onClose}>
       <div className="dialog-body">ลบ “{emp.name}” ออกจากระบบ? {emp.assets.length ? `พนักงานยังถือครองอุปกรณ์ ${emp.assets.length} รายการ — ระบบจะรับคืนเข้าคลัง IT อัตโนมัติ` : ''}</div>
       <Err msg={error} />
       <div className="dialog-actions">
@@ -98,10 +101,10 @@ function AssetsDialog({ emp, free, onClose }: { emp: Emp; free: A[]; onClose: ()
   const give = useAction();
   const back = useAction({ errorAs: 'toast' });
   return (
-    <Dialog title={`อุปกรณ์ที่ถือครอง · ${emp.name}`} className="w600" onClose={onClose}>
+    <Dialog title={`อุปกรณ์ที่ถือครอง · ${emp.name}`} className={`w600 ${css.dlg}`} onClose={onClose}>
       <div className="col">
         {emp.assets.map(a => (
-          <div key={a.tag} style={{ display: 'grid', gridTemplateColumns: '110px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--color-divider)', fontSize: 14 }}>
+          <div key={a.tag} className={css.held}>
             <span className="tnum" style={{ fontSize: 12 }}>{a.tag}</span><span>{a.type} · {a.model}</span>
             <button className="btn btn-ghost" style={{ color: 'var(--color-neutral-700)' }} disabled={back.pending} onClick={() => back.run(() => returnAsset(a.tag))}>คืนอุปกรณ์</button>
           </div>
@@ -114,7 +117,7 @@ function AssetsDialog({ emp, free, onClose }: { emp: Emp; free: A[]; onClose: ()
           {free.map(a => <button key={a.tag} className="tag tag-outline" style={{ background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => { setF({ tag: a.tag, model: a.model, type: a.type }); give.setError(''); }}>{a.tag} · {a.model}</button>)}
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 120px auto', gap: 8, alignItems: 'end' }}>
+      <div className={css.handover}>
         <div className="field"><label htmlFor="h-type">ประเภท</label><select id="h-type" className="input" value={f.type} onChange={e => setF(x => ({ ...x, type: e.target.value }))}>{ASSET_TYPES.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
         <div className="field"><label htmlFor="h-model">รุ่น</label><input id="h-model" className="input" value={f.model} onChange={e => setF(x => ({ ...x, model: e.target.value }))} placeholder="เช่น MacBook Air M3" /></div>
         <div className="field"><label htmlFor="h-tag">Asset Tag</label><input id="h-tag" className="input" value={f.tag} onChange={e => setF(x => ({ ...x, tag: e.target.value }))} placeholder="NB-0130" /></div>
