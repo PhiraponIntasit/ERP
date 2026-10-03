@@ -1,0 +1,39 @@
+/* "ศูนย์มอบหมายงาน" — the IT Manager often dispatches from a phone while away from the desk.
+   Scoped under .stats / .card so these rules beat the shared classes (.stat-strip, .input). */
+
+.stats .stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  padding: var(--space-3) var(--space-4); background: transparent; border: 0; border-right: 1px solid var(--color-divider); margin-right: -1px; transition: background .15s; }
+.stats .stat:hover { background: color-mix(in srgb, var(--color-accent) 7%, transparent); }
+.stats .statOn { box-shadow: inset 0 -2px 0 var(--color-accent); }
+.stats .hot :global(.kpi-value) { color: var(--color-accent-700); }
+
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.card.urgent { border-top: 2px solid var(--color-accent); }
+.who { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+.whoText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.whoText strong { font-weight: 500; }
+.call { flex: none; gap: 6px; }
+.assign { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.owner { font-size: 13px; }
+.owner strong { font-weight: 500; }
+.assignRow { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.card .assignRow :global(.input) { width: 300px; max-width: 100%; }
+
+@media (max-width: 700px) {
+  /* .stat-strip turns 2×2 here; draw the line between the two rows */
+  .stats .stat:nth-child(-n+2) { border-bottom: 1px solid var(--color-divider); }
+}
+
+@media (max-width: 860px) {
+  .stats .stat { min-height: 72px; }
+  /* filters scroll sideways instead of wrapping into several rows */
+  .filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4) 4px; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters > button { min-height: 40px; }
+  .call { min-height: 44px; padding-inline: 16px; }
+  .assign { flex-direction: column; align-items: stretch; }
+  .assignRow { margin-left: 0; flex-direction: column; }
+  /* 16px stops iOS Safari from zooming into a field on focus */
+  .card .assignRow :global(.input) { width: 100%; font-size: 16px; min-height: 44px; }
+  .assignBtn { min-height: 48px; font-size: 16px; justify-content: center; }
+}
