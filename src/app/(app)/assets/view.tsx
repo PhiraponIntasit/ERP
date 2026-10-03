@@ -5,22 +5,35 @@ import { registerAsset, returnAsset } from '@/server/actions/people';
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { ASSET_TYPES } from '@/lib/domain';
+import { ScanButton } from '@/components/barcode-scanner';
+import { useToast } from '@/components/toast';
 import css from '@/components/people-tables.module.css';
 
 const FILTERS: [string, string, (a: AssetRow) => boolean][] = [
   ['all', 'ทั้งหมด', () => true], ['inuse', 'ถือครองอยู่', a => !!a.holderId], ['free', 'ว่างในคลัง IT', a => !a.holderId], ['warranty', 'ประกันใกล้หมด / หมดแล้ว', a => a.warn],
 ];
 
-export function AssetsView({ rows, emps }: { rows: AssetRow[]; emps: { id: string; name: string; dept: string }[] }) {
+export function AssetsView({ rows, emps, openTag }: { rows: AssetRow[]; emps: { id: string; name: string; dept: string }[]; openTag?: string }) {
   const [q, setQ] = useState(''), [af, setAf] = useState('all');
-  const [dlg, setDlg] = useState<null | { type: 'new' } | { type: 'hist'; tag: string }>(null);
+  const [dlg, setDlg] = useState<null | { type: 'new'; tag?: string } | { type: 'hist'; tag: string }>(
+    openTag && rows.some(r => r.tag === openTag) ? { type: 'hist', tag: openTag } : null);
+  const toast = useToast();
+  const onScan = (tag: string) => {
+    if (rows.some(r => r.tag === tag)) return setDlg({ type: 'hist', tag });
+    // Unknown sticker: offer to register it if it looks like a tag, otherwise just say so
+    if (/^[A-Z0-9._-]{1,32}$/.test(tag)) setDlg({ type: 'new', tag });
+    else toast(`ไม่พบ “${tag}” ในทะเบียน`);
+  };
   const s = q.trim().toLowerCase();
   const shown = rows.filter((FILTERS.find(f => f[0] === af) ?? FILTERS[0])[2]).filter(a => !s || (a.tag + a.model + a.type + a.serialText + (a.holderId ? a.holderName : '')).toLowerCase().includes(s));
   const hist = dlg?.type === 'hist' ? rows.find(r => r.tag === dlg.tag) : undefined;
   return (
     <div className="anim-page stack-4">
       <div className={`toolbar ${css.toolbar}`}>
-        <input className={`input ${css.search}`} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา Tag, รุ่น, Serial, ผู้ถือครอง" aria-label="ค้นหาอุปกรณ์" />
+        <div className={css.searchRow}>
+          <input className={`input ${css.search}`} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหา Tag, รุ่น, Serial, ผู้ถือครอง" aria-label="ค้นหาอุปกรณ์" />
+          <ScanButton onScan={onScan} />
+        </div>
         <div className={css.chips} role="group" aria-label="กรองอุปกรณ์">
           {FILTERS.map(([k, l, fn]) => <button key={k} className={`chip sm${af === k ? ' on' : ''}`} aria-pressed={af === k} onClick={() => setAf(k)}>{l} <span className="tnum">({rows.filter(fn).length})</span></button>)}
         </div>
@@ -43,18 +56,19 @@ export function AssetsView({ rows, emps }: { rows: AssetRow[]; emps: { id: strin
           </tbody>
         </table>
       </div>
-      {dlg?.type === 'new' && <NewAssetDialog emps={emps} onClose={() => setDlg(null)} />}
+      {dlg?.type === 'new' && <NewAssetDialog emps={emps} tag={dlg.tag} onClose={() => setDlg(null)} />}
       {hist && <HistDialog a={hist} onClose={() => setDlg(null)} />}
     </div>
   );
 }
 
-function NewAssetDialog({ emps, onClose }: { emps: { id: string; name: string; dept: string }[]; onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>({ type: 'Notebook', holder: '' });
+function NewAssetDialog({ emps, tag, onClose }: { emps: { id: string; name: string; dept: string }[]; tag?: string; onClose: () => void }) {
+  const [f, setF] = useState<Record<string, string>>({ type: 'Notebook', holder: '', tag: tag ?? '' });
   const { run, pending, error } = useAction();
   const inp = (k: string, label: string, type = 'text', ph = '', cls = '') => <div className={`field ${cls}`}><label htmlFor={'na-' + k}>{label}</label><input id={'na-' + k} className="input" type={type} value={f[k] ?? ''} placeholder={ph} onChange={e => setF(x => ({ ...x, [k]: e.target.value }))} /></div>;
   return (
     <Dialog title="ลงทะเบียนอุปกรณ์" className={`w560 ${css.dlg}`} onClose={onClose}>
+      {tag && <div className="dialog-body" role="status">ไม่พบ {tag} ในทะเบียน — กรอกข้อมูลเพื่อลงทะเบียนอุปกรณ์ชิ้นนี้</div>}
       <div className="grid2">
         {inp('tag', 'Asset Tag', 'text', 'NB-0131')}
         <div className="field"><label htmlFor="na-type">ประเภท</label><select id="na-type" className="input" value={f.type} onChange={e => setF(x => ({ ...x, type: e.target.value }))}>{ASSET_TYPES.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
