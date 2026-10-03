@@ -25,8 +25,13 @@ function getDetector(): Promise<Detector> {
   })().catch(e => { detectorPromise = null; throw e; }));
 }
 
-/** Scanned text → asset tag: printable, single-spaced, upper-case, max 40 chars (the field's limit). */
-export const toTag = (raw: string) => raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 40);
+/** Scanned text → asset tag: printable, single-spaced, upper-case, max 40 chars (the field's limit).
+ *  A sticker's QR may hold a link to the register (…/assets?tag=NB-0077) instead of the bare tag. */
+export const toTag = (raw: string) => {
+  const link = /[?&]tag=([^&#]+)/i.exec(raw);
+  if (link) try { raw = decodeURIComponent(link[1].replace(/\+/g, ' ')); } catch { /* keep the raw text */ }
+  return raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 40);
+};
 
 export function ScanButton({ onScan }: { onScan: (tag: string) => void }) {
   const [open, setOpen] = useState(false);
