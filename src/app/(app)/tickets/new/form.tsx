@@ -9,26 +9,7 @@ import { CATS, SLA_H, URG, URG_KEYS } from '@/lib/domain';
 import css from './form.module.css';
 import { ScanButton } from '@/components/barcode-scanner';
 import { useToast } from '@/components/toast';
-
-type Img = { src: string; name: string; blob: Blob };
-const MAX = 6;
-
-/** Downscale to ≤1000px and re-encode as JPEG — keeps uploads small and strips EXIF. */
-function shrink(file: File): Promise<Img | null> {
-  return new Promise(resolve => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const sc = Math.min(1, 1000 / Math.max(img.width, img.height));
-      const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
-      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      c.toBlob(b => resolve(b ? { src: URL.createObjectURL(b), name: file.name, blob: b } : null), 'image/jpeg', 0.72);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    img.src = url;
-  });
-}
+import { MAX_PHOTOS as MAX, shrink, type Img } from '@/components/photo-shrink';
 
 const blank = { cat: 'laptop', urgency: 'medium', title: '', assetTag: '', desc: '' };
 

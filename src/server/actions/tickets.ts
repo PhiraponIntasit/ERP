@@ -8,6 +8,31 @@ import { CAT_LABEL, ST, URG, WORK_STATUSES } from '@/lib/domain';
 import { canTakeWork } from '../assignable';
 import { notifyAssigned, notifyClosed, notifyNewTicket, notifyReopened, notifyResolved } from '../notify';
 
+type Saved = { file: string; mime: string; name: string; size: number };
+
+/** Validate (count, size, real image bytes) and store uploaded photos. On failure nothing is left behind. */
+async function savePhotos(raw: FormDataEntryValue[]): Promise<Saved[]> {
+  const files = raw.filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length > MAX_IMAGES) throw new Fail(`แนบรูปได้สูงสุด ${MAX_IMAGES} รูป`);
+  const saved: Saved[] = [];
+  try {
+    for (const f of files) {
+      if (f.size > MAX_IMAGE_BYTES) throw new Fail('ไฟล์รูปใหญ่เกิน 5 MB');
+      const buf = Buffer.from(await f.arrayBuffer());
+      const mime = sniffImage(buf);
+      if (!mime) throw new Fail('รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WebP, GIF)');
+      saved.push({ file: await saveUpload(buf, mime), mime, name: f.name.slice(0, 120), size: f.size });
+    }
+  } catch (e) {
+    await Promise.all(saved.map(s => removeUpload(s.file)));
+    throw e;
+  }
+  return saved;
+}
+
+/** Work photos per ticket, across all updates. */
+const MAX_WORK_PHOTOS = 24;
+
 export async function createTicket(fd: FormData) {
   return act(async () => {
     const me = await requireAction('ticket_new');
@@ -17,17 +42,8 @@ export async function createTicket(fd: FormData) {
     if (!CAT_LABEL[cat] || !URG[urgency]) throw new Fail('ข้อมูลประเภทหรือความเร่งด่วนไม่ถูกต้อง');
     if (title.length > 200 || desc.length > 5000) throw new Fail('ข้อความยาวเกินไป');
 
-    const files = fd.getAll('images').filter((f): f is File => f instanceof File && f.size > 0);
-    if (files.length > MAX_IMAGES) throw new Fail(`แนบรูปได้สูงสุด ${MAX_IMAGES} รูป`);
-    const saved: { file: string; mime: string; name: string; size: number }[] = [];
+    const saved = await savePhotos(fd.getAll('images'));
     try {
-      for (const f of files) {
-        if (f.size > MAX_IMAGE_BYTES) throw new Fail('ไฟล์รูปใหญ่เกิน 5 MB');
-        const buf = Buffer.from(await f.arrayBuffer());
-        const mime = sniffImage(buf);
-        if (!mime) throw new Fail('รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WebP, GIF)');
-        saved.push({ file: await saveUpload(buf, mime), mime, name: f.name.slice(0, 120), size: f.size });
-      }
       const id = await db.$transaction(async tx => {
         const id = 'TCK-' + (await nextSeq(tx, 'tck'));
         await tx.ticket.create({ data: {
@@ -90,24 +106,38 @@ async function workTicket(me: User, tid: string) {
   return t;
 }
 
-export async function updateTicketStatus(tid: string, status: string, rawNote: string) {
+/** Status / note update from the technician, optionally with photos (e.g. before / after the repair). */
+export async function updateTicketStatus(tid: string, status: string, rawNote: string, photos?: FormData) {
   return act(async () => {
     const me = await requireAction('tickets_work');
     const t = await workTicket(me, tid);
     const note = str(rawNote).slice(0, 1000);
+    const incoming = photos?.getAll('photos') ?? [];
     if (!(WORK_STATUSES as readonly string[]).includes(status)) throw new Fail('สถานะไม่ถูกต้อง');
-    if (status === t.status && !note) throw new Fail('เลือกสถานะใหม่หรือพิมพ์บันทึกก่อน');
-    await db.$transaction(async tx => {
-      const changed = status !== t.status;
-      await tx.ticket.update({ where: { id: tid }, data: {
-        status,
-        ...(changed && status === 'resolved' ? { resolvedAt: new Date() } : {}),
-        ...(changed && t.status === 'resolved' ? { resolvedAt: null } : {}),
-        history: { create: { text: 'อัปเดตสถานะ: ' + ST[status][0] + (note ? ' — ' + note : ''), by: me.name } },
-      } });
-      if (changed) await audit(tx, me, 'ticket', 'อัปเดตสถานะ', tid, ST[t.status][0] + ' → ' + ST[status][0] + (note ? ' · ' + note : ''));
-      else await audit(tx, me, 'ticket', 'บันทึกการทำงาน', tid, note);
-    });
+    if (status === t.status && !note && !incoming.length) throw new Fail('เลือกสถานะใหม่ พิมพ์บันทึก หรือแนบรูปก่อน');
+    const already = incoming.length ? await db.ticketImage.count({ where: { ticketId: tid, kind: 'work' } }) : 0;
+    if (already + incoming.length > MAX_WORK_PHOTOS) throw new Fail(`งานนี้แนบรูปของช่างได้รวมไม่เกิน ${MAX_WORK_PHOTOS} รูป (แนบไปแล้ว ${already} รูป)`);
+    const saved = await savePhotos(incoming);
+    const changed = status !== t.status;
+    const pics = saved.length ? ` · แนบรูป ${saved.length} รูป` : '';
+    try {
+      await db.$transaction(async tx => {
+        const ord = saved.length ? await tx.ticketImage.count({ where: { ticketId: tid } }) : 0;
+        const ev = await tx.ticketEvent.create({ data: { ticketId: tid, by: me.name,
+          text: changed || note ? 'อัปเดตสถานะ: ' + ST[status][0] + (note ? ' — ' + note : '') + pics : `แนบรูปการทำงาน ${saved.length} รูป` } });
+        await tx.ticket.update({ where: { id: tid }, data: {
+          status,
+          ...(changed && status === 'resolved' ? { resolvedAt: new Date() } : {}),
+          ...(changed && t.status === 'resolved' ? { resolvedAt: null } : {}),
+          images: { create: saved.map((s, i) => ({ ...s, ord: ord + i, kind: 'work', eventId: ev.id })) },
+        } });
+        if (changed) await audit(tx, me, 'ticket', 'อัปเดตสถานะ', tid, ST[t.status][0] + ' → ' + ST[status][0] + (note ? ' · ' + note : '') + pics);
+        else await audit(tx, me, 'ticket', saved.length && !note ? 'แนบรูปการทำงาน' : 'บันทึกการทำงาน', tid, (note || '') + pics);
+      });
+    } catch (e) {
+      await Promise.all(saved.map(s => removeUpload(s.file)));
+      throw e;
+    }
     if (status === 'resolved' && t.status !== 'resolved') notifyResolved(t, me.id, me.name, note);
     return `อัปเดต ${tid} แล้ว`;
   });
