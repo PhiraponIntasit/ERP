@@ -1,12 +1,15 @@
 // Copies every ticket photo from the Vercel Blob store into a local folder.
 // Incremental: files already in the folder are skipped, so it can run daily.
 //   BLOB_READ_WRITE_TOKEN=… npm run backup:photos -- ./backup/photos
+//   or, for a store connected with OIDC: `npx vercel env pull` (gives BLOB_STORE_ID + VERCEL_OIDC_TOKEN, valid ~12 h), then run it with those
 import { list, get } from '@vercel/blob';
 import { mkdir, writeFile, access } from 'node:fs/promises';
 import path from 'node:path';
 
 const dir = path.resolve(process.argv[2] || './backup/photos');
-if (!process.env.BLOB_READ_WRITE_TOKEN) { console.error('Set BLOB_READ_WRITE_TOKEN'); process.exit(1); }
+if (!process.env.BLOB_READ_WRITE_TOKEN && !(process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN)) {
+  console.error('Set BLOB_READ_WRITE_TOKEN, or BLOB_STORE_ID + VERCEL_OIDC_TOKEN (npx vercel env pull)'); process.exit(1);
+}
 await mkdir(dir, { recursive: true });
 
 let cursor, total = 0, copied = 0;

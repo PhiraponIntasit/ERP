@@ -32,9 +32,9 @@
 ## 3. ที่เก็บรูป
 
 1. Project → **Storage → Create → Blob** → access **Private**, region ใกล้สุด (Singapore)
-2. Connect เข้ากับ Production → ได้ `BLOB_READ_WRITE_TOKEN` อัตโนมัติ
+2. Connect เข้ากับ Production → ได้ `BLOB_STORE_ID` (store รุ่นใหม่ ยืนยันตัวตนด้วย OIDC ของ Vercel เอง) หรือ `BLOB_READ_WRITE_TOKEN` (store รุ่นเก่า) อัตโนมัติ — โค้ดรองรับทั้งสองแบบ
 
-เมื่อมี token นี้ `src/server/uploads.ts` จะเก็บรูปใน Blob (`tickets/<ชื่อสุ่ม>.jpg`) แทนดิสก์ — ในเครื่อง dev ที่ไม่มี token ยังเก็บใน `UPLOAD_DIR` เหมือนเดิม
+เมื่อมีตัวแปรตัวใดตัวหนึ่งนี้ `src/server/uploads.ts` จะเก็บรูปใน Blob (`tickets/<ชื่อสุ่ม>.jpg`) แทนดิสก์ — ในเครื่อง dev ที่ไม่มี token ยังเก็บใน `UPLOAD_DIR` เหมือนเดิม
 
 ## 4. Environment Variables
 
@@ -101,6 +101,7 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
 - Vercel Blob เก็บแบบ durable อยู่แล้ว สำรองไว้กันลบผิด/ย้ายผู้ให้บริการ:
   ```bash
   BLOB_READ_WRITE_TOKEN=... npm run backup:photos -- /path/to/backup/photos
+  # store แบบ OIDC: npx vercel env pull แล้วใช้ BLOB_STORE_ID + VERCEL_OIDC_TOKEN จากไฟล์นั้นแทน (token ใช้ได้ ~12 ชม.)
   ```
   ดึงเฉพาะรูปใหม่ (incremental) — ตั้งให้รันทุกวันบนเครื่องในออฟฟิศหรือ NAS ได้
 

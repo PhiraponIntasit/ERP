@@ -29,6 +29,7 @@ test('employees: cards, department filters scroll, phone link, one-column form',
   await expect(page.locator('tbody tr').first()).toContainText('IT');
 
   await page.getByRole('button', { name: '+ เพิ่มพนักงาน' }).tap();
+  await expect(page.getByLabel('ตำแหน่ง')).toBeVisible();   // the dialog mounts after the tap
   // both boxes in the same frame: the dialog scales in, so two separate reads can catch different sizes
   const [name, pos] = await page.evaluate(() => ['e-name', 'e-position'].map(id => document.getElementById(id)!.getBoundingClientRect().toJSON()));
   expect(pos.y).toBeGreaterThan(name.y);             // stacked, not side by side
