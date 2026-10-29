@@ -29,9 +29,10 @@ test('employees: cards, department filters scroll, phone link, one-column form',
   await expect(page.locator('tbody tr').first()).toContainText('IT');
 
   await page.getByRole('button', { name: '+ เพิ่มพนักงาน' }).tap();
-  const [name, pos] = [await page.getByLabel('ชื่อ-นามสกุล').boundingBox(), await page.getByLabel('ตำแหน่ง').boundingBox()];
-  expect(pos!.y).toBeGreaterThan(name!.y);           // stacked, not side by side
-  expect(Math.abs(pos!.width - name!.width)).toBeLessThan(2);
+  // both boxes in the same frame: the dialog scales in, so two separate reads can catch different sizes
+  const [name, pos] = await page.evaluate(() => ['e-name', 'e-position'].map(id => document.getElementById(id)!.getBoundingClientRect().toJSON()));
+  expect(pos.y).toBeGreaterThan(name.y);             // stacked, not side by side
+  expect(Math.abs(pos.width - name.width)).toBeLessThan(2);
   await page.getByRole('button', { name: 'ยกเลิก' }).tap();
 });
 
