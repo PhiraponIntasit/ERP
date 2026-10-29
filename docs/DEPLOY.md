@@ -25,7 +25,7 @@
 2. Connect เข้ากับโปรเจกต์ โดยเลือก environment **Production** เท่านั้น
    (อย่าให้ Preview ใช้ DB จริง — ถ้าต้องการ DB สำหรับ Preview ให้เปิดตัวเลือก Neon branch ต่อ preview)
 3. Vercel จะสร้าง `DATABASE_URL` (pooled) และ `DATABASE_URL_UNPOOLED` (direct) ให้เอง
-4. แก้ `DATABASE_URL` ต่อท้ายด้วย `&pgbouncer=true&connection_limit=5` (Prisma ต้องใช้เมื่อผ่าน connection pooler)
+4. ไม่ต้องแก้ `DATABASE_URL` (Vercel ล็อกค่าที่ Neon integration สร้างไว้) — `src/server/db.ts` เติม `pgbouncer=true&connection_limit=5` ให้เองเมื่อเป็น URL แบบ pooled (host มี `-pooler`)
 
 ตอน deploy production สคริปต์ `scripts/vercel-build.sh` จะรัน `prisma migrate deploy` ผ่าน `DATABASE_URL_UNPOOLED` ให้อัตโนมัติ — Preview deploy จะไม่แตะฐานข้อมูล
 
