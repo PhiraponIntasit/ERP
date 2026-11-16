@@ -13,8 +13,8 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD ?? '';
   if (password.length < 12) throw new Error('ADMIN_PASSWORD must be at least 12 characters');
 
-  // First numbers issued: TCK-1001, PR-<year>-0001, EMP-0001
-  await db.counter.createMany({ data: [{ key: 'tck', value: 1001 }, { key: 'pr', value: 1 }, { key: 'emp', value: 1 }], skipDuplicates: true });
+  // First numbers issued: TCK-1001, PR-<year>-0001, EMP-0001, ORD-<year>-000001
+  await db.counter.createMany({ data: [{ key: 'tck', value: 1001 }, { key: 'pr', value: 1 }, { key: 'emp', value: 1 }, { key: 'ord', value: 1 }], skipDuplicates: true });
 
   if (await db.user.count()) { console.log('Users already exist — no account created.'); return; }
   const u = await db.user.create({ data: { username, name, role: 'admin', perms: [...ROLE_PERMS.admin], passwordHash: await bcrypt.hash(password, 10) } });

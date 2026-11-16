@@ -12,7 +12,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
   const [q, setQ] = useState('');
   const [dlg, setDlg] = useState<null | { type: 'receive'; sku?: string } | { type: 'add' } | { type: 'pr' }>(null);
   const lowNoPR = items.filter(i => i.qty <= i.min && !i.inPR);
-  const stockVal = items.reduce((a, i) => a + i.qty * i.price, 0);
+  const stockVal = items.reduce((a, i) => a + i.qty * i.cost, 0);
   const s = q.trim().toLowerCase();
   const rows = items.filter(i => !s || (i.sku + i.name + i.cat).toLowerCase().includes(s));
   const close = () => setDlg(null);
@@ -41,7 +41,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
       </div>
       <div className="scroll-x">
         <table className="table">
-          <thead><tr><th>SKU</th><th>สินค้า</th><th>หมวด</th><th>ที่เก็บ</th><th style={{ width: 200 }}>คงเหลือ</th><th className="r">จุดสั่งซื้อ</th><th className="r">ราคา/หน่วย</th><th>สถานะ</th><th></th></tr></thead>
+          <thead><tr><th>SKU</th><th>สินค้า</th><th>หมวด</th><th>ที่เก็บ</th><th style={{ width: 200 }}>คงเหลือ</th><th className="r">จุดสั่งซื้อ</th><th className="r">ราคาทุน/หน่วย</th><th>สถานะ</th><th></th></tr></thead>
           <tbody>
             {rows.map(i => {
               const low = i.qty <= i.min, out = i.qty === 0;
@@ -58,7 +58,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
                     </div>
                   </td>
                   <td className="r tnum">{i.min}</td>
-                  <td className="r tnum">{bahtS(i.price)}</td>
+                  <td className="r tnum">{bahtS(i.cost)}</td>
                   <td><span className={`tag ${low ? (i.inPR ? 'tag-accent' : 'tag-outline') : 'tag-neutral'}`}>{out ? 'หมดสต็อก' : low ? (i.inPR ? 'ต่ำ · สั่งแล้ว' : 'ต่ำกว่าจุดสั่งซื้อ') : 'ปกติ'}</span></td>
                   <td className="r">{manage && <button className="btn btn-ghost" onClick={() => setDlg({ type: 'receive', sku: i.sku })}>+ เพิ่ม</button>}</td>
                 </tr>

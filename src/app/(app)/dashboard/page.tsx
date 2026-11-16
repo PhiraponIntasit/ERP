@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const prSum = (statuses: string[]) => statuses.reduce((a, s) => a + stats.prGrand(s), 0);
   const PENDING = ['pending', 'pending_exec'];
   const pendingAll = PENDING.reduce((a, s) => a + stats.prCount(s), 0);
-  const stockVal = items.reduce((a, i) => a + i.qty * num(i.price), 0);
+  const stockVal = items.reduce((a, i) => a + i.qty * num(i.cost), 0);
 
   const kpis: { label: string; value: string | number; unit: string; sub: string; page: Module }[] = [
     { label: 'คำร้องที่เปิดอยู่', value: openCount, unit: 'งาน', sub: `รอมอบหมาย ${newCount} · วิกฤต ${stats.criticalOpen}`, page: 'dispatch' },

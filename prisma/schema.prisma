@@ -89,16 +89,96 @@ model AssetEvent {
   @@index([assetTag, t])
 }
 
+/// A product in stock. `price` = selling price incl. VAT (storefront); `cost` = purchase cost
+/// used on purchase requests and for stock value. `reserved` = units held by orders awaiting payment.
 model InventoryItem {
-  sku   String      @id
+  sku            String         @id
+  name           String
+  cat            String
+  unit           String
+  qty            Int
+  min            Int
+  price          Decimal        @db.Decimal(12, 2)
+  cost           Decimal        @default(0) @db.Decimal(12, 2)
+  compareAt      Decimal?       @db.Decimal(12, 2)
+  loc            String
+  reserved       Int            @default(0)
+  slug           String?        @unique
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brandId        String?
+  brand          Brand?         @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  /// Key specs used by filters and the PC builder, e.g. { socket, ramType, tdpW, wattage, formFactor }
+  specs          Json           @default("{}")
+  description    String         @default("")
+  warrantyMonths Int            @default(12)
+  /// Listed on the storefront
+  active         Boolean        @default(false)
+  serialTracked  Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  moves          StockMove[]
+  images         ProductImage[]
+  serials        SerialNumber[]
+  cartItems      CartItem[]
+  buildItems     PcBuildItem[]
+  orderLines     OrderLine[]
+
+  @@index([categoryId, active])
+  @@index([brandId])
+}
+
+model Category {
+  id       String          @id @default(cuid())
+  slug     String          @unique // cpu, mainboard, ram, vga …
+  name     String
+  parentId String?
+  parent   Category?       @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[]      @relation("CategoryTree")
+  sort     Int             @default(0)
+  items    InventoryItem[]
+}
+
+model Brand {
+  id    String          @id @default(cuid())
+  slug  String          @unique
   name  String
-  cat   String
-  unit  String
-  qty   Int
-  min   Int
-  price Decimal     @db.Decimal(12, 2)
-  loc   String
-  moves StockMove[]
+  logo  String?
+  items InventoryItem[]
+}
+
+model ProductImage {
+  id   String        @id @default(cuid())
+  sku  String
+  item InventoryItem @relation(fields: [sku], references: [sku], onDelete: Cascade)
+  file String // file name in the upload store
+  ord  Int
+
+  @@index([sku, ord])
+}
+
+/// One physical unit of a serial-tracked product.
+model SerialNumber {
+  serial      String        @id
+  sku         String
+  item        InventoryItem @relation(fields: [sku], references: [sku])
+  /// in_stock | sold | claim | returned
+  status      String        @default("in_stock")
+  receivedRef String // PR number it arrived on
+  orderLineId String?
+  orderLine   OrderLine?    @relation(fields: [orderLineId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+
+  @@index([sku, status])
+}
+
+model Supplier {
+  id        String            @id @default(cuid())
+  name      String
+  taxId     String            @default("")
+  phone     String            @default("")
+  email     String            @default("")
+  active    Boolean           @default(true)
+  purchases PurchaseRequest[]
 }
 
 model StockMove {
@@ -185,6 +265,8 @@ model PurchaseRequest {
   requesterId String
   requester   User      @relation("PRRequester", fields: [requesterId], references: [id])
   vendor      String
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   note        String    @default("")
   /// pending | pending_exec | approved | rejected | received
   status      String
@@ -233,8 +315,173 @@ model AuditLog {
   @@index([cat])
 }
 
-/// Document number sequences (tck, pr, emp)
+/// Document number sequences (tck, pr, emp, ord)
 model Counter {
   key   String @id
   value Int
+}
+
+// ── Storefront customers (person A) ─────────────────────────────────────────
+
+/// A shop customer. Separate from User (staff): customers never reach the back office.
+model Customer {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String    @default("")
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  addresses    Address[]
+  cart         Cart?
+  builds       PcBuild[]
+  orders       Order[]
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  line1       String
+  subdistrict String
+  district    String
+  province    String
+  postcode    String
+  isDefault   Boolean  @default(false)
+
+  @@index([customerId])
+}
+
+/// A signed-in customer's cart, or a guest's (cookie token) until they sign in.
+model Cart {
+  id         String     @id @default(cuid())
+  customerId String?    @unique
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  guestToken String?    @unique
+  updatedAt  DateTime   @updatedAt
+  items      CartItem[]
+}
+
+model CartItem {
+  cartId String
+  cart   Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  sku    String
+  item   InventoryItem @relation(fields: [sku], references: [sku], onDelete: Cascade)
+  qty    Int
+
+  @@id([cartId, sku])
+}
+
+model PcBuild {
+  id         String        @id @default(cuid())
+  customerId String?
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime      @default(now())
+  items      PcBuildItem[]
+}
+
+model PcBuildItem {
+  buildId String
+  build   PcBuild       @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  /// cpu | mainboard | ram | vga | ssd | psu | case | cooler
+  slot    String
+  sku     String
+  item    InventoryItem @relation(fields: [sku], references: [sku], onDelete: Cascade)
+  qty     Int           @default(1)
+
+  @@id([buildId, slot])
+}
+
+// ── Orders and payments (person B) ──────────────────────────────────────────
+
+model Order {
+  id          String      @id // ORD-2027-000123
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  /// pending_payment | paid | packing | shipped | completed | cancelled | expired | refunded
+  status      String
+  subtotal    Decimal     @db.Decimal(12, 2)
+  discount    Decimal     @default(0) @db.Decimal(12, 2)
+  shippingFee Decimal     @default(0) @db.Decimal(12, 2)
+  /// Amount the customer pays (VAT included)
+  total       Decimal     @db.Decimal(12, 2)
+  couponCode  String?
+  /// Delivery address as it was when the order was placed
+  shipName    String
+  shipPhone   String
+  shipAddress String
+  carrier     String?
+  trackingNo  String?
+  createdAt   DateTime    @default(now())
+  /// Unpaid orders expire here and their reserved stock is released
+  expiresAt   DateTime
+  paidAt      DateTime?
+  shippedAt   DateTime?
+  lines       OrderLine[]
+  payments    Payment[]
+
+  @@index([customerId, createdAt])
+  @@index([status, expiresAt])
+}
+
+/// Name and price are copied at order time, so later price changes never alter an order.
+model OrderLine {
+  id      String         @id @default(cuid())
+  orderId String
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sku     String
+  item    InventoryItem  @relation(fields: [sku], references: [sku])
+  name    String
+  price   Decimal        @db.Decimal(12, 2)
+  qty     Int
+  serials SerialNumber[]
+
+  @@index([orderId])
+}
+
+model Payment {
+  id          String         @id @default(cuid())
+  orderId     String
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// opn | promptpay_slip
+  provider    String
+  amount      Decimal        @db.Decimal(12, 2)
+  /// pending | successful | failed | expired
+  status      String         @default("pending")
+  /// The provider's charge id (or the slip reference)
+  providerRef String?        @unique
+  qrImage     String?
+  expiresAt   DateTime
+  paidAt      DateTime?
+  createdAt   DateTime       @default(now())
+  events      PaymentEvent[]
+
+  @@index([orderId])
+}
+
+/// Every webhook delivery, kept once per provider event id so a repeat delivery is ignored.
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  type      String
+  raw       Json
+  at        DateTime @default(now())
+}
+
+model Coupon {
+  code       String   @id
+  /// percent | fixed
+  kind       String
+  value      Decimal  @db.Decimal(12, 2)
+  minSpend   Decimal  @default(0) @db.Decimal(12, 2)
+  startsAt   DateTime
+  endsAt     DateTime
+  usageLimit Int?
+  used       Int      @default(0)
+  active     Boolean  @default(true)
 }

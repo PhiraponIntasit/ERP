@@ -30,9 +30,10 @@ export async function addItem(f: Record<string, string>) {
     if (!sku || !name) throw new Fail('กรุณากรอก SKU และชื่อสินค้า');
     if (!/^[A-Z0-9._-]{1,32}$/.test(sku)) throw new Fail('SKU ใช้ได้เฉพาะ A–Z, 0–9, . _ -');
     if (await db.inventoryItem.findUnique({ where: { sku } })) throw new Fail('SKU นี้มีอยู่แล้ว');
-    const qty = Math.max(0, int(f.qty) || 0), min = Math.max(0, int(f.min) || 0), price = Math.max(0, parseFloat(str(f.price)) || 0);
+    const qty = Math.max(0, int(f.qty) || 0), min = Math.max(0, int(f.min) || 0), cost = Math.max(0, parseFloat(str(f.cost)) || 0);
     await db.$transaction(async tx => {
-      await tx.inventoryItem.create({ data: { sku, name, cat: str(f.cat) || 'ทั่วไป', unit: str(f.unit) || 'ชิ้น', qty, min, price, loc: str(f.loc) || '-' } });
+      await tx.inventoryItem.create({ data: { sku, name, cat: str(f.cat) || 'ทั่วไป', unit: str(f.unit) || 'ชิ้น', qty, min, cost, price: cost, loc: str(f.loc) || '-' } });
+      // Selling price starts at cost; it is set on the product page before the item is listed (active)
       if (qty) await tx.stockMove.create({ data: { sku, type: 'in', qty, ref: 'ยอดตั้งต้น', by: me.name } });
       await audit(tx, me, 'stock', 'เพิ่มสินค้าใหม่', sku, `${name} · ตั้งต้น ${qty} · จุดสั่งซื้อ ${min}`);
     });
@@ -51,7 +52,7 @@ export async function createPR(vendorRaw: string, noteRaw: string, linesIn: Reco
     if (!vendor) throw new Fail('กรุณาระบุผู้ขาย');
     const items = await db.inventoryItem.findMany({ where: { sku: { in: wanted.map(w => w.sku) } } });
     const bySku = new Map(items.map(i => [i.sku, i]));
-    const lines = wanted.filter(w => bySku.has(w.sku)).map((w, ord) => { const i = bySku.get(w.sku)!; return { ord, sku: i.sku, name: i.name, unit: i.unit, qty: w.q, price: i.price }; });
+    const lines = wanted.filter(w => bySku.has(w.sku)).map((w, ord) => { const i = bySku.get(w.sku)!; return { ord, sku: i.sku, name: i.name, unit: i.unit, qty: w.q, price: i.cost }; });
     if (!lines.length) throw new Fail('ไม่พบสินค้าที่เลือก');
     const total = lines.reduce((a, l) => a + l.qty * num(l.price), 0);
     const year = new Date().toLocaleDateString('en-CA', { timeZone: DISPLAY_TZ, year: 'numeric' });
