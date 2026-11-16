@@ -63,17 +63,6 @@ export async function createTicket(fd: FormData) {
   });
 }
 
-/** "แจ้งปัญหา" form: is this tag in the asset register? Only the device's type and model are revealed —
- *  never who holds it, unless it's the person asking. Not finding it doesn't block the report
- *  (some kit, e.g. shared access points, isn't registered). */
-export async function lookupAsset(raw: string): Promise<{ tag: string; found: boolean; type?: string; model?: string; mine?: boolean }> {
-  const me = await requireAction('ticket_new');
-  const tag = str(raw).toUpperCase().slice(0, 40);
-  const a = tag ? await db.asset.findUnique({ where: { tag }, select: { type: true, model: true, holderId: true } }) : null;
-  if (!a) return { tag, found: false };
-  return { tag, found: true, type: a.type, model: a.model, mine: !!me.empId && a.holderId === me.empId };
-}
-
 export async function assignTicket(tid: string, assigneeId: string) {
   return act(async () => {
     const me = await requireAction('dispatch');

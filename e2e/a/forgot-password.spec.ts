@@ -12,12 +12,10 @@ let username = '', userId = '';
 test.describe.configure({ mode: 'serial' });
 test.beforeAll(async () => {
   username = `${P}${Date.now() % 1e6}`;
-  const emp = await db.employee.create({ data: { id: `EMP-E2E${Date.now() % 1e5}`, name: NAME, dept: 'HR', email: `${username}@e2e.test` } });
-  userId = (await db.user.create({ data: { username, name: NAME, role: 'employee', perms: ['ticket_new', 'my_tickets'], empId: emp.id, passwordHash: await bcrypt.hash(OLD, 10) } })).id;
+  userId = (await db.user.create({ data: { username, name: NAME, role: 'employee', perms: ['ticket_new', 'my_tickets'], email: `${username}@e2e.test`, dept: 'HR', passwordHash: await bcrypt.hash(OLD, 10) } })).id;
 });
 test.afterAll(async () => {
   await db.user.deleteMany({ where: { username: { startsWith: P } } });   // reset rows cascade
-  await db.employee.deleteMany({ where: { name: NAME } });
 });
 
 async function request(browser: Browser, ident: string) {

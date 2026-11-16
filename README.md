@@ -1,6 +1,6 @@
 # IT Products Store Management System
 
-IT products store management: Inventory (stock, reorder points), Procurement (PR → approval → PO → goods receipt), Helpdesk (repair tickets that draw parts from stock), Employees & IT assets, user accounts with per-person permissions, and an append-only Audit Log.
+IT products store management: Inventory (stock, reorder points), Procurement (PR → approval → PO → goods receipt), Helpdesk (repair tickets that draw parts from stock), user accounts with per-person permissions, and an append-only Audit Log.
 
 **Stack:** Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · Prisma 6 · PostgreSQL. UI uses the *Classical* design system (`src/app/classical.css`) with theme overrides (blue accent in light mode, gold on warm black in dark mode).
 
@@ -61,10 +61,9 @@ src/app/api/audit             audit-log CSV export
 | ศูนย์มอบหมายงาน | `/dispatch` | IT Manager, Admin |
 | งานที่ได้รับมอบหมาย | `/work` | IT Support, Admin |
 | คลังสินค้า | `/inventory` | Store Keeper, IT Support (view only), Admin |
+| สินค้า & ราคาขาย | `/products` | Store Keeper, Admin |
 | ใบขอซื้อ / ใบสั่งซื้อ | `/purchase` | Store Keeper, Admin |
 | อนุมัติการสั่งซื้อ | `/approvals` | Manager, Executive, Admin |
-| ข้อมูลพนักงาน & อุปกรณ์ | `/employees` | IT Support, Admin |
-| ทะเบียนทรัพย์สิน | `/assets` | IT Support, IT Manager, Admin |
 | บัญชีผู้ใช้ & สิทธิ์ | `/users` | Admin |
 | Audit Log | `/audit` | Manager, Executive, Admin |
 
@@ -75,7 +74,7 @@ Admins can add or remove modules per person on top of the role defaults.
 - **Tickets:** new → assigned → in progress / waiting for parts → resolved → requester confirms with a 1–5★ rating (or "ยังไม่หาย" sends it back). SLA: critical 4 h, high 8 h, medium 24 h, low 72 h.
 - **Parts withdrawal** decrements stock immediately (never below zero, even under concurrent requests), records it on the ticket, and alerts when at/below the reorder point.
 - **Procurement:** PR → Manager approval (if total incl. VAT > `APPROVAL_LIMIT`, then a *different* Executive) → PO printable as PDF → "รับเข้าคลัง" adds stock. Requesters can't approve their own PR. Items with an open PR aren't suggested again.
-- **Assets:** one holder per tag; returning or deleting an employee sends devices back to IT storage with custody history kept.
+- **Staff contacts:** each account keeps its work email (notifications, password reset), phone (shown to technicians) and department, edited on บัญชีผู้ใช้ & สิทธิ์.
 - **Audit log:** every change, login (including failures) and CSV export is recorded with before → after detail. A database trigger rejects UPDATE/DELETE/TRUNCATE on `AuditLog`.
 
 ## Security notes

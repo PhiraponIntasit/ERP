@@ -26,7 +26,7 @@ test('fits the screen; SLA number and filters narrow the list; requester can be 
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
   const late = page.locator('.tcard', { hasText: lateId }), fresh = page.locator('.tcard', { hasText: freshId });
-  const phone = (await db.user.findUniqueOrThrow({ where: { username: USERS.employee }, include: { employee: true } })).employee!.phone;
+  const phone = (await db.user.findUniqueOrThrow({ where: { username: USERS.employee } })).phone;
   await expect(late.getByRole('link', { name: /โทรหา/ })).toHaveAttribute('href', `tel:${phone.replace(/[^\d+]/g, '')}`);
 
   // the "เกิน SLA" number at the top is a shortcut to that list; tapping again shows everything

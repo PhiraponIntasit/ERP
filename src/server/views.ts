@@ -5,7 +5,7 @@ import { ACTIVE_WORK, ASSIGNABLE } from './assignable';
 import { CAT_LABEL, fmtD, fmtDT, PRST, slaOf, ST, STEP_IDX, STEPS, URG, VAT, baht, isPendingPR, canDecide, config } from '@/lib/domain';
 
 export const ticketInclude = {
-  requester: { select: { name: true, employee: { select: { dept: true } } } },
+  requester: { select: { name: true, dept: true } },
   assignee: { select: { name: true } },
   images: { orderBy: { ord: 'asc' } },
   parts: true,
@@ -19,7 +19,7 @@ export function ticketView(t: T) {
     id: t.id, title: t.title, desc: t.desc, status: t.status, urgency: t.urgency, assigneeId: t.assigneeId, requesterId: t.requesterId,
     catLabel: CAT_LABEL[t.cat] ?? t.cat, urgLabel: URG[t.urgency][0], urgTag: URG[t.urgency][1],
     statusLabel: ST[t.status][0], statusTag: ST[t.status][1], createdText: fmtDT(t.created),
-    requester: t.requester.name, dept: t.requester.employee?.dept ?? '—', assetText: t.assetTag || '—',
+    requester: t.requester.name, dept: t.requester.dept || '—', assetText: t.assetTag || '—',
     assigneeName: t.assignee?.name ?? 'ยังไม่มอบหมาย',
     imgs: t.images.map(i => ({ id: i.id, src: `/api/files/${i.id}`, name: i.name, kind: i.kind, eventId: i.eventId })),
     parts: t.parts.map(p => `${p.name} × ${p.qty}`),

@@ -9,7 +9,7 @@ export async function as(browser: Browser, username: string, password = '1234'):
   return page;
 }
 
-/** A throwaway account linked to no employee, so tests never touch the seeded demo users. Remove with dropUsers(). */
+/** A throwaway account, so tests never touch the seeded demo users. Remove with dropUsers(). */
 export async function makeUser(username: string, password: string, role = 'employee', perms = ['ticket_new', 'my_tickets']) {
   return db.user.create({ data: { username, name: 'ทดสอบ ' + username, role, perms, passwordHash: await bcrypt.hash(password, 10) } });
 }

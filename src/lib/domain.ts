@@ -4,7 +4,7 @@ export const MODULES = [
   ['dashboard', 'แดชบอร์ดภาพรวม'], ['ticket_new', 'แจ้งปัญหา'], ['my_tickets', 'คำร้องของฉัน'],
   ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
-  ['employees', 'ข้อมูลพนักงาน & อุปกรณ์'], ['assets', 'ทะเบียนทรัพย์สิน'], ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
+  ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
 export type Module = (typeof MODULES)[number][0];
 export const MOD_LABEL = Object.fromEntries(MODULES) as Record<Module, string>;
@@ -14,7 +14,7 @@ export const isModule = (m: string): m is Module => (ALL as string[]).includes(m
 export const MOD_PATH: Record<Module, string> = {
   dashboard: '/dashboard', ticket_new: '/tickets/new', my_tickets: '/tickets/mine', dispatch: '/dispatch',
   tickets_work: '/work', inventory: '/inventory', products: '/products', purchase: '/purchase', approvals: '/approvals',
-  employees: '/employees', assets: '/assets', users: '/users', audit: '/audit',
+  users: '/users', audit: '/audit',
 };
 
 export const HDR: Record<Module, [string, string]> = {
@@ -23,8 +23,7 @@ export const HDR: Record<Module, [string, string]> = {
   tickets_work: ['IT Support', 'งานที่ได้รับมอบหมาย'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
   products: ['Catalog', 'สินค้า & ราคาขาย'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
-  employees: ['Directory', 'ข้อมูลพนักงาน & อุปกรณ์ที่ถือครอง'], users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'],
-  assets: ['Asset Registry', 'ทะเบียนทรัพย์สิน IT'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
+  users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };
 
 export const ROLES = [
@@ -38,8 +37,8 @@ export const isRole = (r: string): r is Role => ROLES.some(x => x[0] === r);
 export const ROLE_PERMS: Record<Role, Module[]> = {
   employee: ['ticket_new', 'my_tickets'],
   storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'purchase'],
-  itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory', 'employees', 'assets'],
-  itmanager: ['ticket_new', 'my_tickets', 'dispatch', 'assets'],
+  itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory'],
+  itmanager: ['ticket_new', 'my_tickets', 'dispatch'],
   manager: ['dashboard', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
   executive: ['dashboard', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
   admin: ALL,
@@ -48,9 +47,9 @@ export const ROLE_PERMS: Record<Role, Module[]> = {
 export const SLA_H: Record<string, number> = { critical: 4, high: 8, medium: 24, low: 72 };
 export const AUDIT_CATS: Record<string, string> = {
   auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ',
-  employee: 'พนักงาน', asset: 'ทรัพย์สิน', system: 'ระบบ',
+  employee: 'พนักงาน', asset: 'ทรัพย์สิน', // older records only: the employee & asset registers were removed
+  system: 'ระบบ',
 };
-export const EMP_F: Record<string, string> = { name: 'ชื่อ', position: 'ตำแหน่ง', dept: 'แผนก', email: 'อีเมล', phone: 'โทร' };
 
 export const CATS = [
   ['laptop', 'โน้ตบุ๊ก / PC'], ['monitor', 'จอภาพ'], ['network', 'Network / Wi-Fi'],
@@ -79,7 +78,6 @@ export const PRST: Record<string, [string, string]> = {
 };
 export const isPendingPR = (status: string) => status === 'pending' || status === 'pending_exec';
 
-export const ASSET_TYPES = ['Notebook', 'iPad / Tablet', 'Monitor', 'Mobile Phone', 'อื่น ๆ'];
 export const DEPTS = ['IT', 'Operations', 'Marketing', 'Finance', 'HR'];
 export const VAT = 0.07;
 

@@ -26,7 +26,7 @@ async function expectMails(id: string, about: string, n: number) {
   seen.push(...got.map(m => m.file));
   return got;
 }
-const emailOf = async (username: string) => (await db.user.findUniqueOrThrow({ where: { username }, include: { employee: true } })).employee!.email;
+const emailOf = async (username: string) => (await db.user.findUniqueOrThrow({ where: { username } })).email;
 
 test.describe.configure({ mode: 'serial' });
 test.afterAll(async () => {
