@@ -23,10 +23,10 @@ async function deliver(userIds: string[], actorId: string, subject: string, line
   for (const u of users) {
     const to = u.employee?.email?.trim();
     if (!to) continue;
-    const text = [`สวัสดีคุณ ${u.name}`, '', ...lines, ...(link ? ['', `เปิดดู: ${link}`] : []), '', '— Apex ERP (อีเมลอัตโนมัติ ไม่ต้องตอบกลับ)'].join('\n');
+    const text = [`สวัสดีคุณ ${u.name}`, '', ...lines, ...(link ? ['', `เปิดดู: ${link}`] : []), '', '— IT Products Store (อีเมลอัตโนมัติ ไม่ต้องตอบกลับ)'].join('\n');
     const html = `<p>สวัสดีคุณ ${esc(u.name)}</p>${lines.map(l => `<p>${esc(l)}</p>`).join('')}`
-      + (link ? `<p><a href="${link}">เปิดดูในระบบ</a></p>` : '') + '<p style="color:#666;font-size:12px">— Apex ERP (อีเมลอัตโนมัติ ไม่ต้องตอบกลับ)</p>';
-    try { await sendMail(to, `[Apex ERP] ${subject}`, text, html); }
+      + (link ? `<p><a href="${link}">เปิดดูในระบบ</a></p>` : '') + '<p style="color:#666;font-size:12px">— IT Products Store (อีเมลอัตโนมัติ ไม่ต้องตอบกลับ)</p>';
+    try { await sendMail(to, `[IT Products Store] ${subject}`, text, html); }
     catch (e) { console.error('notification email failed', subject, e); }
   }
 }

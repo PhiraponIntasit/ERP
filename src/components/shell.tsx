@@ -21,8 +21,8 @@ export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: s
     <aside className={`sidebar${open ? ' open' : ''}`}>
       <div className="sidebar-head">
         <div style={{ padding: '0 8px', minWidth: 0 }}>
-          <div className="brand">Apex ERP</div>
-          <div className="brand-sub">Helpdesk · Inventory · Procurement</div>
+          <div className="brand">IT Products Store</div>
+          <div className="brand-sub">Store Management System</div>
         </div>
         <button className="btn btn-secondary btn-icon menu-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="app-menu"
           aria-label={open ? 'ปิดเมนู' : 'เปิดเมนู'} style={{ position: 'relative' }}>

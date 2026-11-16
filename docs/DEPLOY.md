@@ -55,7 +55,7 @@ Project → Settings → Environment Variables (Production) — ดูราย�
 | `APP_URL` | URL ของเว็บ เช่น `https://erp-xxx.vercel.app` (หรือโดเมนบริษัทเมื่อผูกแล้ว) — ใช้สร้างลิงก์ในอีเมล |
 | `SMTP_HOST` / `SMTP_PORT` | Gmail: `smtp.gmail.com` / `587` · Office 365: `smtp.office365.com` / `587` · Resend: `smtp.resend.com` / `465` |
 | `SMTP_USER` / `SMTP_PASS` | บัญชีที่ใช้ส่ง — Gmail ต้องเปิด 2-Step Verification แล้วสร้าง **App password** (ใช้รหัสผ่านปกติไม่ได้) |
-| `MAIL_FROM` | ชื่อผู้ส่ง เช่น `Apex ERP <you@gmail.com>` (Gmail ต้องเป็นอีเมลเดียวกับ `SMTP_USER`) |
+| `MAIL_FROM` | ชื่อผู้ส่ง เช่น `IT Products Store <you@gmail.com>` (Gmail ต้องเป็นอีเมลเดียวกับ `SMTP_USER`) |
 
 ครั้งแรกที่ deploy ยังไม่รู้ URL — deploy ไปก่อน แล้วค่อยใส่ `APP_URL` ตาม URL ที่ได้ แล้วกด Redeploy
 
