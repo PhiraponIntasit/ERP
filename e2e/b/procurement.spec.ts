@@ -1,19 +1,22 @@
 import { test, expect, type Page } from '@playwright/test';
 import { db, loginAs, USERS } from '../helpers';
 
+const SUPPLIER = 'บจก. ไอทีซัพพลาย'; // seeded supplier sup-1
+
 // Purchase flow: PR → approval (1 or 2 steps by APPROVAL_LIMIT, default ฿50,000 incl. VAT) → PO → receive into stock.
 
 /** Creates a PR from the purchase page with exactly one line, returns its id. */
-async function createPR(page: Page, vendor: string, itemName: string, qty: number) {
+async function createPR(page: Page, tag: string, itemName: string, qty: number) {
   await page.goto('/purchase');
   await page.getByRole('button', { name: '+ สร้างใบขอซื้อ' }).click();
   const dlg = page.getByRole('dialog');
-  await dlg.locator('#pr-v').fill(vendor);
+  await dlg.locator('#pr-s').selectOption({ label: SUPPLIER });
+  await dlg.locator('#pr-n').fill(tag);
   for (const input of await dlg.locator('input[aria-label^="จำนวนสั่ง"]').all()) await input.fill(''); // drop pre-filled low-stock lines
   await dlg.getByLabel(`จำนวนสั่ง ${itemName}`).fill(String(qty));
   await dlg.getByRole('button', { name: 'ส่งขออนุมัติ' }).click();
   await expect(dlg).toBeHidden();
-  const pr = await db.purchaseRequest.findFirstOrThrow({ where: { vendor }, include: { lines: true } });
+  const pr = await db.purchaseRequest.findFirstOrThrow({ where: { note: tag }, include: { lines: true } });
   expect(pr.status).toBe('pending');
   expect(pr.lines.map(l => [l.name, l.qty])).toEqual([[itemName, qty]]);
   return pr.id;
@@ -24,9 +27,9 @@ const row = (page: Page, id: string) => page.locator('tr', { hasText: id });
 const status = async (id: string) => (await db.purchaseRequest.findUniqueOrThrow({ where: { id } })).status;
 
 test('small PR: one approval, PO, then receiving adds stock', async ({ page }) => {
-  const vendor = `E2E small ${Date.now()}`, item = 'HDMI 2.1 Cable 2m', qty = 4;
+  const tag = `E2E small ${Date.now()}`, item = 'HDMI 2.1 Cable 2m', qty = 4;
   await loginAs(page, USERS.storekeeper);
-  const id = await createPR(page, vendor, item, qty);
+  const id = await createPR(page, tag, item, qty);
   await expect(row(page, id)).toContainText('รอ Manager');
 
   await loginAs(page, USERS.manager);
@@ -40,7 +43,8 @@ test('small PR: one approval, PO, then receiving adds stock', async ({ page }) =
   await row(page, id).getByRole('button', { name: 'ใบสั่งซื้อ PDF' }).click();
   const po = page.locator('#po-print');
   await expect(po).toContainText('PO' + id.slice(2));
-  await expect(po).toContainText(vendor);
+  await expect(po).toContainText(SUPPLIER);
+  await expect(po).toContainText('0105551234567'); // supplier tax ID is printed on the PO
   await page.getByRole('button', { name: 'ปิด' }).click();
 
   const before = (await db.inventoryItem.findFirstOrThrow({ where: { name: item } })).qty;
@@ -52,9 +56,9 @@ test('small PR: one approval, PO, then receiving adds stock', async ({ page }) =
 });
 
 test('PR over the limit needs Manager then a different Executive', async ({ page }) => {
-  const vendor = `E2E large ${Date.now()}`;
+  const tag = `E2E large ${Date.now()}`;
   await loginAs(page, USERS.storekeeper);
-  const id = await createPR(page, vendor, 'Dell UltraSharp 27" 4K', 5); // 5 × 12,900 + VAT > 50,000
+  const id = await createPR(page, tag, 'Dell UltraSharp 27" 4K', 5); // 5 × 12,900 + VAT > 50,000
 
   await loginAs(page, USERS.manager);
   await page.goto('/approvals');
@@ -75,18 +79,18 @@ test('PR over the limit needs Manager then a different Executive', async ({ page
 });
 
 test('requester cannot approve their own PR', async ({ page }) => {
-  const vendor = `E2E self ${Date.now()}`;
+  const tag = `E2E self ${Date.now()}`;
   await loginAs(page, USERS.admin); // admin has both purchase and approvals
-  const id = await createPR(page, vendor, 'HDMI 2.1 Cable 2m', 1);
+  const id = await createPR(page, tag, 'HDMI 2.1 Cable 2m', 1);
   await page.goto('/approvals');
   await expect(card(page, id)).toContainText('คุณเป็นผู้ขอซื้อใบนี้');
   await expect(card(page, id).getByRole('button')).toHaveCount(0);
 });
 
 test('rejecting needs a reason, which the requester then sees', async ({ page }) => {
-  const vendor = `E2E reject ${Date.now()}`, reason = 'ราคาสูงกว่าผู้ขายรายอื่น';
+  const tag = `E2E reject ${Date.now()}`, reason = 'ราคาสูงกว่าผู้ขายรายอื่น';
   await loginAs(page, USERS.storekeeper);
-  const id = await createPR(page, vendor, 'HDMI 2.1 Cable 2m', 2);
+  const id = await createPR(page, tag, 'HDMI 2.1 Cable 2m', 2);
 
   await loginAs(page, USERS.manager);
   await page.goto('/approvals');

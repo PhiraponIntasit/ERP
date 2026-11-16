@@ -63,12 +63,17 @@ const PRODUCTS: New[] = [
   ['MON-LG-27GR75Q', 'LG UltraGear 27GR75Q 27" QHD 165Hz', 'monitor', 'LG', 'เครื่อง', 4, 1, 7990, 8690, 'คลังใหญ่', { sizeInch: 27, resolution: '2560x1440', refreshHz: 165 }],
 ];
 
-export const SUPPLIERS = ['บจก. ไอทีซัพพลาย', 'บจก. คอมพาร์ท ดิสทริบิวชั่น', 'หจก. สยามไอทีเทรด'];
+/** [name, tax ID, phone, email] — fictitious distributors for the demo */
+export const SUPPLIERS: [string, string, string, string][] = [
+  ['บจก. ไอทีซัพพลาย', '0105551234567', '02-111-2233', 'sales@itsupply.example'],
+  ['บจก. คอมพาร์ท ดิสทริบิวชั่น', '0105559876543', '02-444-5566', 'order@compart.example'],
+  ['หจก. สยามไอทีเทรด', '0103557654321', '02-777-8899', 'po@siamittrade.example'],
+];
 
 export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
   await db.category.createMany({ data: CATEGORIES.map(([slug, name], sort) => ({ id: 'cat-' + slug, slug, name, sort })) });
   await db.brand.createMany({ data: BRANDS.map(name => ({ id: 'brand-' + slugOf(name), slug: slugOf(name), name })) });
-  await db.supplier.createMany({ data: SUPPLIERS.map((name, i) => ({ id: `sup-${i + 1}`, name })) });
+  await db.supplier.createMany({ data: SUPPLIERS.map(([name, taxId, phone, email], i) => ({ id: `sup-${i + 1}`, name, taxId, phone, email })) });
 
   for (const [sku, [cat, brand, price, specs]] of Object.entries(EXISTING))
     await db.inventoryItem.update({ where: { sku }, data: { price, categoryId: 'cat-' + cat, brandId: 'brand-' + slugOf(brand), specs, slug: slugOf(sku), active: true } });
@@ -80,4 +85,13 @@ export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
     })),
   });
   await db.stockMove.createMany({ data: PRODUCTS.map(([sku, , , , , qty]) => ({ t: stockedAt, sku, type: 'in', qty, ref: 'ยอดตั้งต้น', by })) });
+
+  // CPUs, graphics cards and mainboards carry a manufacturer warranty per unit, so they are sold by serial
+  const tracked = PRODUCTS.filter(p => SERIAL_CATS.includes(p[2]));
+  await db.inventoryItem.updateMany({ where: { sku: { in: tracked.map(p => p[0]) } }, data: { serialTracked: true } });
+  await db.serialNumber.createMany({
+    data: tracked.flatMap(([sku, , , , , qty]) => Array.from({ length: qty }, (_, k) => ({ serial: `${sku}-SN${String(k + 1).padStart(4, '0')}`, sku, receivedRef: 'ยอดตั้งต้น' }))),
+  });
 }
+
+const SERIAL_CATS = ['cpu', 'vga', 'mainboard'];
