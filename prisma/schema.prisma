@@ -152,7 +152,7 @@ model StockMove {
   t    DateTime      @default(now())
   sku  String
   item InventoryItem @relation(fields: [sku], references: [sku])
-  type String // in | out
+  type String // in | out | sale
   qty  Int
   ref  String
   by   String
@@ -302,6 +302,19 @@ model Customer {
   cart         Cart?
   builds       PcBuild[]
   orders       Order[]
+  sessions     CustomerSession[]
+}
+
+/// A signed-in customer's browser. Kept apart from staff sessions so a customer cookie can never open the back office.
+model CustomerSession {
+  /// sha256 of the cookie token — the raw token is never stored
+  id         String   @id
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
 }
 
 model Address {

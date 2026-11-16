@@ -77,7 +77,7 @@ export function InventoryView({ items, suppliers, moves, movesPage, manage, fact
               {moves.map(m => (
                 <tr key={m.id}>
                   <td className="tnum" style={{ fontSize: 13 }}>{m.tText}</td>
-                  <td><span className={`tag ${m.type === 'in' ? 'tag-accent' : 'tag-neutral'}`}>{m.type === 'in' ? 'รับเข้า' : 'เบิกออก'}</span></td>
+                  <td><span className={`tag ${m.type === 'in' ? 'tag-accent' : 'tag-neutral'}`}>{m.type === 'in' ? 'รับเข้า' : m.type === 'sale' ? 'ขาย' : 'เบิกออก'}</span></td>
                   <td>{m.name}</td>
                   <td className="r tnum">{(m.type === 'in' ? '+' : '−') + m.qty}</td>
                   <td style={{ fontSize: 13 }}>{m.ref}</td>

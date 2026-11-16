@@ -1,0 +1,21 @@
+/* Checkout & payment screens. Person A's storefront layout can restyle these freely. */
+.top { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--color-neutral-200, #ddd); }
+.brand { font-weight: 600; letter-spacing: .08em; text-decoration: none; color: inherit; font-size: 18px; }
+.main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+.sum { position: sticky; top: 16px; }
+.line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 6px 0; }
+.line > :last-child { white-space: nowrap; }
+.total { display: flex; justify-content: space-between; font-size: 20px; font-weight: 600; padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--color-neutral-300, #ccc); }
+.note { font-size: 12px; color: var(--color-neutral-700); }
+.demo { border: 1px dashed var(--color-accent-2-800, #a60); color: var(--color-accent-2-800, #a60); background: var(--color-accent-2-100, #fff5e6); padding: 8px 12px; border-radius: 6px; font-size: 13px; text-align: center; }
+.pay { max-width: 440px; margin: 0 auto; text-align: center; }
+.qr { width: min(280px, 80vw); margin: 0 auto; background: #fff; padding: 12px; border-radius: 8px; }
+.qr svg { display: block; width: 100%; height: auto; }
+.amount { font-size: 34px; font-weight: 600; }
+.clock { font-size: 22px; }
+.done { font-size: 48px; line-height: 1; color: var(--color-accent); }
+.row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.mob :global(.grid2) { grid-template-columns: 1fr; }
+@media (max-width: 560px) { .main :global(.grid2) { grid-template-columns: 1fr; } }
