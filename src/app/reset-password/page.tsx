@@ -4,7 +4,7 @@ import { findValidReset } from '@/server/password-reset';
 import { ResetForm } from './form';
 
 // Keep the token in the URL out of Referer headers sent to fonts/CDNs.
-export const metadata: Metadata = { title: 'ตั้งรหัสผ่านใหม่ · Apex ERP', referrer: 'no-referrer' };
+export const metadata: Metadata = { title: 'ตั้งรหัสผ่านใหม่ · IT Products Store', referrer: 'no-referrer' };
 
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const token = (await searchParams).token ?? '';

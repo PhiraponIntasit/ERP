@@ -1,6 +1,6 @@
-# Apex ERP
+# IT Products Store Management System
 
-Internal ERP: Helpdesk (repair tickets), Inventory, Procurement (PR → approval → PO → goods receipt), Employees & IT assets, user accounts with per-person permissions, and an append-only Audit Log.
+IT products store management: Inventory (stock, reorder points), Procurement (PR → approval → PO → goods receipt), Helpdesk (repair tickets that draw parts from stock), Employees & IT assets, user accounts with per-person permissions, and an append-only Audit Log.
 
 **Stack:** Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · Prisma 6 · PostgreSQL. UI uses the *Classical* design system (`src/app/classical.css`) with theme overrides (blue accent in light mode, gold on warm black in dark mode).
 

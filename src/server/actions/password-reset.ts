@@ -49,7 +49,7 @@ export async function requestPasswordReset(_prev: { msg: string; error: string }
   // Sent after the response, so a real account takes as long to answer as an unknown one.
   after(async () => {
     try {
-      await sendMail(to, 'ตั้งรหัสผ่านใหม่ · Apex ERP',
+      await sendMail(to, 'ตั้งรหัสผ่านใหม่ · IT Products Store',
         `สวัสดีคุณ ${who.name}\n\nมีคำขอตั้งรหัสผ่านใหม่สำหรับบัญชี ${who.username}\nเปิดลิงก์นี้ภายใน ${TTL_MIN} นาทีเพื่อตั้งรหัสผ่านใหม่ (ใช้ได้ครั้งเดียว):\n\n${link}\n\nถ้าคุณไม่ได้ขอ ไม่ต้องทำอะไร รหัสผ่านเดิมยังใช้ได้ตามปกติ`,
         `<p>สวัสดีคุณ ${escapeHtml(who.name)}</p><p>มีคำขอตั้งรหัสผ่านใหม่สำหรับบัญชี <b>${escapeHtml(who.username)}</b></p>
          <p><a href="${link}">ตั้งรหัสผ่านใหม่</a> — ลิงก์ใช้ได้ภายใน ${TTL_MIN} นาที และใช้ได้ครั้งเดียว</p>
