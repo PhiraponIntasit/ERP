@@ -27,10 +27,10 @@ export async function cleanupShop() {
 }
 
 /** A product only this test uses, so stock numbers are exact. With `serials`, it is serial-tracked and those units are on the shelf. */
-export async function product(price: number, qty: number, serials?: string[]) {
+export async function product(price: number, qty: number, serials?: string[], name?: string) {
   const sku = `E2E-CO-${stamp()}`.toUpperCase();
   products.push(sku);
-  await db.inventoryItem.create({ data: { sku, name: `E2E สินค้า ${sku}`, cat: 'ทดสอบ', unit: 'ชิ้น', qty, min: 0, cost: price / 2, price, loc: 'E2E-01', active: true, serialTracked: !!serials } });
+  await db.inventoryItem.create({ data: { sku, name: name ?? `E2E สินค้า ${sku}`, cat: 'ทดสอบ', unit: 'ชิ้น', qty, min: 0, cost: price / 2, price, loc: 'E2E-01', active: true, serialTracked: !!serials } });
   if (serials) await db.serialNumber.createMany({ data: serials.map(serial => ({ serial, sku, receivedRef: 'E2E' })) });
   return sku;
 }
