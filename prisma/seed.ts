@@ -3,7 +3,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { ROLE_PERMS, type Role } from '../src/lib/domain';
-import { seedStore } from './seed-store';
+import { seedSales, seedStore } from './seed-store';
 
 const db = new PrismaClient();
 const TZ = process.env.DISPLAY_TZ || 'Asia/Bangkok';
@@ -68,6 +68,7 @@ async function main() {
   // Demo storefront customer (fictitious) — signs in on the storefront, not the back office
   await db.customer.create({ data: { id: 'cus-demo', email: 'customer@example.com', passwordHash: hash, name: 'มานี ใจดี', phone: '0899999999',
     addresses: { create: { name: 'มานี ใจดี', phone: '0899999999', line1: '99/1 ถนนนิมมานเหมินท์', subdistrict: 'สุเทพ', district: 'เมืองเชียงใหม่', province: 'เชียงใหม่', postcode: '50200', isDefault: true } } } });
+  await seedSales(db, hash);
 
   const h = (t: Date, text: string, by: string) => ({ t, text, by });
   const tickets = [
