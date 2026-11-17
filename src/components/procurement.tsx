@@ -1,4 +1,5 @@
 'use client';
+import { SHOP } from '@/lib/shop';
 import { useState } from 'react';
 import type { PRView } from '@/server/views';
 import Link from 'next/link';
@@ -118,7 +119,7 @@ export function PRDialog({ items, suppliers, factor, onClose }: { items: InvItem
   );
 }
 
-const COMPANY = { name: 'Apex Corporation Co., Ltd.', addr: '199 ถนนพระราม 9 ห้วยขวาง กรุงเทพฯ 10310 · เลขประจำตัวผู้เสียภาษี 0105560000000' };
+const COMPANY = { name: SHOP.nameEn, addr: `${SHOP.name} · ${SHOP.addr} · เลขประจำตัวผู้เสียภาษี ${SHOP.taxId}` };
 
 /** Purchase order sheet. Printing forces the light theme so the PDF is always on white paper. */
 export function PODialog({ po, onClose }: { po: PRView; onClose: () => void }) {

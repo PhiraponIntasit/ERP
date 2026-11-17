@@ -152,7 +152,7 @@ model StockMove {
   t    DateTime      @default(now())
   sku  String
   item InventoryItem @relation(fields: [sku], references: [sku])
-  type String // in | out | sale
+  type String // in | out | sale | return
   qty  Int
   ref  String
   by   String
@@ -399,6 +399,12 @@ model Order {
   expiresAt   DateTime
   paidAt      DateTime?
   shippedAt   DateTime?
+  completedAt DateTime?
+  /// Set when staff cancel a paid order and return the money
+  refundedAt   DateTime?
+  refundReason String?
+  /// Bank transfer reference of the refund
+  refundRef    String?
   lines       OrderLine[]
   payments    Payment[]
 
@@ -428,7 +434,7 @@ model Payment {
   /// opn | promptpay_slip
   provider    String
   amount      Decimal        @db.Decimal(12, 2)
-  /// pending | successful | failed | expired
+  /// pending | successful | failed | expired | refunded
   status      String         @default("pending")
   /// The provider's charge id (or the slip reference)
   providerRef String?        @unique
