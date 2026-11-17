@@ -90,6 +90,15 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
 - `.github/workflows/db-backup.yml` dump ทุกคืน 02:00 เข้ารหัสด้วย GPG เก็บเป็น artifact 30 วัน
   ตั้ง repo secrets: `PROD_DATABASE_URL_UNPOOLED`, `BACKUP_PASSPHRASE` (เก็บ passphrase ไว้ที่ปลอดภัยนอก GitHub ด้วย)
   แล้วกด Actions → db-backup → **Run workflow** ทดสอบ 1 ครั้ง
+- ทุกไฟล์ที่ dump ได้จะถูก**กู้ลงฐานข้อมูลชั่วคราวและตรวจก่อนเก็บ** (`scripts/verify-backup.sh`): มี migration ครบ นับแถวตารางหลัก
+  และตรวจกฎเงิน/สต็อกใน `scripts/integrity.sql` (ยอดจอง = ออเดอร์รอจ่าย, ออเดอร์ที่รับเงินมี Payment ตรงยอด 1 รายการ,
+  Serial บนชั้น = สต็อก + ของที่จ่ายแล้วรอส่ง, สิทธิ์คูปอง = ออเดอร์ที่ใช้) — ถ้าข้อใดไม่ผ่าน job จะ fail และไม่เก็บไฟล์
+- ตรวจไฟล์สำรองเองบนเครื่องใดก็ได้ที่มี PostgreSQL:
+  ```bash
+  gpg -d erp-YYYYMMDD-HHMM.dump.gpg > erp.dump
+  scripts/verify-backup.sh erp.dump postgresql://postgres:postgres@localhost:5432/postgres
+  ```
+- ตรวจกฎเดียวกันกับฐานข้อมูลที่ใช้งานอยู่ (อ่านอย่างเดียว): `psql "$DATABASE_URL" -f scripts/integrity.sql` — ไม่มีแถว = ปกติ
 - กู้คืน:
   ```bash
   gpg -d erp-YYYYMMDD-HHMM.dump.gpg > erp.dump
@@ -97,7 +106,7 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
   ```
   ⚠️ ตาราง `AuditLog` มี trigger ห้ามลบ — กู้ลงฐานข้อมูลใหม่ที่ว่างเปล่า (สร้าง Neon branch/DB ใหม่) แล้วสลับ `DATABASE_URL` จะง่ายกว่ากู้ทับ
 
-**รูป**
+**รูป** (รูปงานซ่อมและรูปสินค้าอยู่ใต้ prefix เดียวกัน `tickets/` สคริปต์นี้จึงสำรองครบทั้งสองแบบ)
 - Vercel Blob เก็บแบบ durable อยู่แล้ว สำรองไว้กันลบผิด/ย้ายผู้ให้บริการ:
   ```bash
   BLOB_READ_WRITE_TOKEN=... npm run backup:photos -- /path/to/backup/photos
@@ -109,7 +118,9 @@ Project → Settings → **Domains** → เพิ่มโดเมนบริ
 
 - [ ] ตั้ง `APP_URL` + SMTP แล้ว และลอง "ลืมรหัสผ่าน" กับบัญชีจริง 1 ครั้ง — ได้อีเมล และลิงก์ในอีเมลเปิดเว็บถูกโดเมน
 
-- [ ] `SHOW_DEMO_ACCOUNTS=false` และไม่ได้ seed ข้อมูลตัวอย่าง
+- [ ] `SHOW_DEMO_ACCOUNTS=false` และไม่ได้ seed ข้อมูลตัวอย่าง (ปิดทั้งบัญชีทดลองพนักงานและหน้า `/demo-shop`)
+- [ ] ตั้ง `PAYMENT_WEBHOOK_SECRET` และ `CRON_SECRET` (`openssl rand -hex 32`) · ถ้าเปิดให้คนนอกดูเดโม ตั้ง `PAYMENT_DEMO_SIMULATE=false`
+- [ ] ระบบชำระเงินยังเป็น**โหมดเดโม** (QR ไปยังรหัสพร้อมเพย์สมมติ) — ขายจริงต้องต่อผู้ให้บริการจริงก่อน (ดู docs/DEMO.md หัวข้อต่อยอด)
 - [ ] Preview environment ไม่ได้ต่อกับ DB/Blob ของ production
 - [ ] ล็อกบัญชีเมื่อใส่รหัสผิดซ้ำ + รหัสผ่านขั้นต่ำ (งานของคน A) merge แล้ว
 - [ ] ทดสอบแจ้งซ่อมพร้อมรูปบนมือถือ แล้วเปิดดูรูปจากบัญชีช่างได้
