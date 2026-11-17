@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     { title: 'มูลค่าการจัดซื้อตามสถานะ', sub: 'รวม VAT', rows: bars(Object.keys(PRST).map(k => [PRST[k][0], stats.prGrand(k)]), bahtS) },
   ];
   const days = [...Array(7)].map((_, k) => new Date(Date.now() - (6 - k) * 864e5));
-  const dayData = days.map(d => { const ms = moves.filter(m => dayKey(m.t) === dayKey(d)); return { d, inN: ms.filter(m => m.type === 'in').reduce((a, m) => a + m.qty, 0), outN: ms.filter(m => m.type === 'out').reduce((a, m) => a + m.qty, 0) }; });
+  const dayData = days.map(d => { const ms = moves.filter(m => dayKey(m.t) === dayKey(d)); return { d, inN: ms.filter(m => m.type === 'in').reduce((a, m) => a + m.qty, 0), outN: ms.filter(m => m.type !== 'in').reduce((a, m) => a + m.qty, 0) }; });
   const dmx = Math.max(1, ...dayData.map(x => Math.max(x.inN, x.outN)));
 
   return (

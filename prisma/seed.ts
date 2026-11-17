@@ -65,6 +65,9 @@ async function main() {
   ];
   await db.inventoryItem.createMany({ data: inv.map(([sku, name, cat, unit, qty, min, price, loc]) => ({ sku, name, cat, unit, qty, min, cost: price, price, loc })) });
   await seedStore(db, daysAgo(30), 'วิภาดา รุ่งเรือง');
+  // Demo storefront customer (fictitious) — signs in on the storefront, not the back office
+  await db.customer.create({ data: { id: 'cus-demo', email: 'customer@example.com', passwordHash: hash, name: 'มานี ใจดี', phone: '0899999999',
+    addresses: { create: { name: 'มานี ใจดี', phone: '0899999999', line1: '99/1 ถนนนิมมานเหมินท์', subdistrict: 'สุเทพ', district: 'เมืองเชียงใหม่', province: 'เชียงใหม่', postcode: '50200', isDefault: true } } } });
 
   const h = (t: Date, text: string, by: string) => ({ t, text, by });
   const tickets = [

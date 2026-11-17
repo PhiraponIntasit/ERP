@@ -46,7 +46,7 @@ export const ROLE_PERMS: Record<Role, Module[]> = {
 
 export const SLA_H: Record<string, number> = { critical: 4, high: 8, medium: 24, low: 72 };
 export const AUDIT_CATS: Record<string, string> = {
-  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ',
+  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน',
   employee: 'พนักงาน', asset: 'ทรัพย์สิน', // older records only: the employee & asset registers were removed
   system: 'ระบบ',
 };
