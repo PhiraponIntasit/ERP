@@ -21,24 +21,26 @@ function daysAgo(n: number, h = 9, m = 0) {
   const wall = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - n, h, m);
   return new Date(wall - tzOffset(new Date(wall)) * 6e4);
 }
-const dateOnly = (d: Date) => new Date(d.toISOString().slice(0, 10));
 
 async function main() {
   const hash = await bcrypt.hash('1234', 10);
-  const U = (id: string, username: string, name: string, role: Role, empId: string) => ({ id, username, passwordHash: hash, name, role, empId, active: true, perms: [...ROLE_PERMS[role]] });
 
-  const emps: { id: string; name: string; position: string; dept: string; phone: string; email: string; assets: [string, string, string][] }[] = [
-    { id: 'EMP-0001', name: 'กรภัทร ศรีวงศ์', position: 'System Administrator', dept: 'IT', phone: '081-000-1001', email: 'korapat.s@apexcorp.co.th', assets: [['Notebook', 'Dell Latitude 7440', 'NB-0101']] },
-    { id: 'EMP-0002', name: 'ประภาส วงศ์ใหญ่', position: 'Chief Operating Officer', dept: 'Operations', phone: '081-000-2002', email: 'prapas.w@apexcorp.co.th', assets: [['Notebook', 'MacBook Pro 16"', 'NB-0090'], ['iPad / Tablet', 'iPad Pro 13"', 'TB-0018']] },
-    { id: 'EMP-0015', name: 'ธนภัทร เจริญสุข', position: 'IT Infrastructure Manager', dept: 'IT', phone: '084-556-6778', email: 'tanapat.c@apexcorp.co.th', assets: [['Notebook', 'MacBook Pro 14"', 'NB-0088'], ['iPad / Tablet', 'iPad Air 11"', 'TB-0012']] },
-    { id: 'EMP-0042', name: 'สมชาย สายชล', position: 'IT Support Engineer', dept: 'IT', phone: '089-123-4567', email: 'somchai.s@apexcorp.co.th', assets: [['Notebook', 'ThinkPad X1 Carbon', 'NB-0120'], ['Mobile Phone', 'iPhone 15', 'MB-0033']] },
-    { id: 'EMP-0043', name: 'ปกรณ์ มีสุข', position: 'IT Support Technician', dept: 'IT', phone: '086-222-3344', email: 'pakorn.m@apexcorp.co.th', assets: [['Notebook', 'ThinkPad T14', 'NB-0121']] },
-    { id: 'EMP-0063', name: 'อรุณี ธนากร', position: 'Operations Manager', dept: 'Operations', phone: '081-777-2020', email: 'arunee.t@apexcorp.co.th', assets: [['Notebook', 'MacBook Air 13"', 'NB-0095'], ['iPad / Tablet', 'iPad Pro 12.9"', 'TB-0020']] },
-    { id: 'EMP-0108', name: 'วิภาดา รุ่งเรือง', position: 'Marketing Lead · ผู้ดูแลคลัง', dept: 'Marketing', phone: '081-998-8776', email: 'wiphada.r@apexcorp.co.th', assets: [['Notebook', 'Dell Latitude 5420', 'NB-0077']] },
-    { id: 'EMP-0131', name: 'สุรชัย ทองดี', position: 'Accountant', dept: 'Finance', phone: '082-444-5566', email: 'surachai.t@apexcorp.co.th', assets: [['Notebook', 'HP EliteBook 840', 'NB-0102'], ['Monitor', 'Dell 27" P2723', 'MN-0045']] },
-    { id: 'EMP-0144', name: 'ณัฐธิดา แก้วใส', position: 'HR Officer', dept: 'HR', phone: '083-111-9090', email: 'natthida.k@apexcorp.co.th', assets: [] },
+  // Work contact details of the staff accounts (email gets notifications and reset links)
+  const contacts: { id: string; name: string; position: string; dept: string; phone: string; email: string }[] = [
+    { id: 'EMP-0001', name: 'กรภัทร ศรีวงศ์', position: 'System Administrator', dept: 'IT', phone: '081-000-1001', email: 'korapat.s@corepick.co.th' },
+    { id: 'EMP-0002', name: 'ประภาส วงศ์ใหญ่', position: 'Chief Operating Officer', dept: 'Operations', phone: '081-000-2002', email: 'prapas.w@corepick.co.th' },
+    { id: 'EMP-0015', name: 'ธนภัทร เจริญสุข', position: 'IT Infrastructure Manager', dept: 'IT', phone: '084-556-6778', email: 'tanapat.c@corepick.co.th' },
+    { id: 'EMP-0042', name: 'สมชาย สายชล', position: 'IT Support Engineer', dept: 'IT', phone: '089-123-4567', email: 'somchai.s@corepick.co.th' },
+    { id: 'EMP-0043', name: 'ปกรณ์ มีสุข', position: 'IT Support Technician', dept: 'IT', phone: '086-222-3344', email: 'pakorn.m@corepick.co.th' },
+    { id: 'EMP-0063', name: 'อรุณี ธนากร', position: 'Operations Manager', dept: 'Operations', phone: '081-777-2020', email: 'arunee.t@corepick.co.th' },
+    { id: 'EMP-0108', name: 'วิภาดา รุ่งเรือง', position: 'Marketing Lead · ผู้ดูแลคลัง', dept: 'Marketing', phone: '081-998-8776', email: 'wiphada.r@corepick.co.th' },
+    { id: 'EMP-0131', name: 'สุรชัย ทองดี', position: 'Accountant', dept: 'Finance', phone: '082-444-5566', email: 'surachai.t@corepick.co.th' },
+    { id: 'EMP-0144', name: 'ณัฐธิดา แก้วใส', position: 'HR Officer', dept: 'HR', phone: '083-111-9090', email: 'natthida.k@corepick.co.th' },
   ];
-  for (const { assets: _a, ...e } of emps) await db.employee.create({ data: e });
+  const U = (id: string, username: string, name: string, role: Role, contactId: string) => {
+    const c = contacts.find(x => x.id === contactId)!;
+    return { id, username, passwordHash: hash, name, role, email: c.email, phone: c.phone, dept: c.dept, active: true, perms: [...ROLE_PERMS[role]] };
+  };
 
   const users = [
     U('u1', 'admin', 'กรภัทร ศรีวงศ์', 'admin', 'EMP-0001'), U('u2', 'manager', 'อรุณี ธนากร', 'manager', 'EMP-0063'),
@@ -48,17 +50,6 @@ async function main() {
     U('u9', 'natthida', 'ณัฐธิดา แก้วใส', 'employee', 'EMP-0144'),
   ];
   for (const u of users) await db.user.create({ data: u });
-
-  // Assets: one per employee holding, with staggered warranty dates (some expiring soon / expired)
-  const W = [420, 60, -30, 300, 700, 25, 180, 510, -90, 365, 240];
-  let k = 0;
-  for (const e of emps) for (const [type, model, tag] of e.assets) {
-    const off = W[k % W.length]; k++;
-    await db.asset.create({ data: { tag, type, model, serial: 'SN' + tag.replace('-', '') + '7Q', warrantyEnd: dateOnly(daysAgo(-off)), holderId: e.id,
-      history: { create: [{ t: daysAgo(420 - k * 17), text: 'ลงทะเบียนอุปกรณ์', by: 'กรภัทร ศรีวงศ์' }, { t: daysAgo(410 - k * 17), text: 'ส่งมอบให้ ' + e.name, by: 'กรภัทร ศรีวงศ์' }] } } });
-  }
-  for (const [type, model, tag, off] of [['Notebook', 'MacBook Air 13" M3', 'NB-0130', 700], ['iPad / Tablet', 'iPad 10th Gen', 'TB-0025', 200], ['Monitor', 'Dell 27" P2723', 'MN-0050', 40]] as const)
-    await db.asset.create({ data: { tag, type, model, serial: 'SN' + tag.replace('-', '') + '9K', warrantyEnd: dateOnly(daysAgo(-off)), holderId: null, history: { create: [{ t: daysAgo(20), text: 'ลงทะเบียนอุปกรณ์', by: 'กรภัทร ศรีวงศ์' }] } } });
 
   const inv: [string, string, string, string, number, number, number, string][] = [
     ['PWR-065W', 'Dell 65W USB-C Adapter', 'อุปกรณ์ไฟฟ้า', 'ชิ้น', 3, 5, 1450, 'B-04'],
@@ -120,11 +111,11 @@ async function main() {
     A(daysAgo(1, 9, 30), 'u2', 'อรุณี ธนากร', 'Manager', 'purchase', 'อนุมัติขั้นที่ 1 (ส่งต่อผู้บริหาร)', 'PR-2026-0013', '฿69,015.00'),
     A(daysAgo(1, 18, 12), null, '(ไม่ระบุตัวตน)', '—', 'auth', 'เข้าสู่ระบบไม่สำเร็จ', 'admin', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'),
     A(daysAgo(1, 18, 13), null, '(ไม่ระบุตัวตน)', '—', 'auth', 'เข้าสู่ระบบไม่สำเร็จ', 'admin', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'),
-    A(daysAgo(0, 8, 2), 'u1', 'กรภัทร ศรีวงศ์', 'Admin', 'user', 'แก้ไขสิทธิ์ผู้ใช้', 'pakorn', '+ทะเบียนทรัพย์สิน'),
+    A(daysAgo(0, 8, 2), 'u1', 'กรภัทร ศรีวงศ์', 'Admin', 'user', 'แก้ไขสิทธิ์ผู้ใช้', 'pakorn', '+คลังสินค้า'),
     A(daysAgo(0, 9, 12), 'u6', 'วิภาดา รุ่งเรือง', 'Store Keeper', 'ticket', 'เปิดคำร้อง', 'TCK-1049', 'Wi-Fi ชั้น 4 หลุดทั้งฟลอร์ · วิกฤต'),
   ] });
 
-  await db.counter.createMany({ data: [{ key: 'tck', value: 1050 }, { key: 'pr', value: 15 }, { key: 'emp', value: 145 }, { key: 'ord', value: 1 }], skipDuplicates: true });
+  await db.counter.createMany({ data: [{ key: 'tck', value: 1050 }, { key: 'pr', value: 15 }, { key: 'ord', value: 1 }], skipDuplicates: true });
   console.log('Seeded sample data. Demo accounts use password 1234.');
 }
 

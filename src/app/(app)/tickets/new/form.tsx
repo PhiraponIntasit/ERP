@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createTicket, lookupAsset } from '@/server/actions/tickets';
+import { createTicket } from '@/server/actions/tickets';
 import { useAction } from '@/components/use-action';
 import { ImagePlusIcon, XIcon } from '@/components/icons';
 import { CameraIcon, CategoryIcon, GalleryIcon, SendIcon } from '@/components/category-icons';
@@ -13,24 +13,13 @@ import { MAX_PHOTOS as MAX, shrink, type Img } from '@/components/photo-shrink';
 
 const blank = { cat: 'laptop', urgency: 'medium', title: '', assetTag: '', desc: '' };
 
-export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: string; model: string }[]; canSeeMine: boolean }) {
+export function NewTicketForm({ canSeeMine }: { canSeeMine: boolean }) {
   const router = useRouter();
   const [nt, setNt] = useState(blank);
   const [images, setImages] = useState<Img[]>([]);
   const { run, pending, error, setError } = useAction();
   const toast = useToast();
   const set = (k: keyof typeof blank, v: string) => setNt(x => ({ ...x, [k]: v }));
-
-  // Check the Asset Tag against the register while typing / after a scan (debounced)
-  const tagNow = nt.assetTag.trim().toUpperCase();
-  const [asset, setAsset] = useState<Awaited<ReturnType<typeof lookupAsset>> | null>(null);
-  useEffect(() => {
-    if (!tagNow) return;
-    let live = true;
-    const t = setTimeout(() => lookupAsset(tagNow).then(r => { if (live) setAsset(r); }, () => {}), 350);
-    return () => { live = false; clearTimeout(t); };
-  }, [tagNow]);
-  const shown = asset && asset.tag === tagNow ? asset : null;   // never show a result for an older value
 
   const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = [...(e.target.files ?? [])]; e.target.value = '';
@@ -71,21 +60,11 @@ export function NewTicketForm({ myAssets, canSeeMine }: { myAssets: { tag: strin
       </div>
       <div className="field"><label htmlFor="nt-title">3. หัวข้อปัญหา</label><input id="nt-title" className="input" value={nt.title} onChange={e => set('title', e.target.value)} maxLength={200} placeholder="เช่น โน้ตบุ๊กเปิดไม่ติด หลังอัปเดต Windows" enterKeyHint="next" /></div>
       <div className="field">
-        <label htmlFor="nt-asset">4. รหัสทรัพย์สิน (Asset Tag) — ถ้ามี</label>
+        <label htmlFor="nt-asset">4. รหัสหรือ Serial ของอุปกรณ์ — ถ้ามี</label>
         <div className={css.assetRow}>
-          <input id="nt-asset" className="input" value={nt.assetTag} onChange={e => set('assetTag', e.target.value)} maxLength={40} placeholder="เช่น NB-0077" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
+          <input id="nt-asset" className="input" value={nt.assetTag} onChange={e => set('assetTag', e.target.value)} maxLength={40} placeholder="พิมพ์หรือกดสแกนบาร์โค้ด / QR" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
           <ScanButton onScan={tag => { set('assetTag', tag); toast(`สแกนได้: ${tag}`); }} />
         </div>
-        <div className={css.assetCheck} aria-live="polite">
-          {shown?.found && <span className={css.assetOk}>✓ {shown.type} · {shown.model}{shown.mine ? ' — เครื่องที่คุณถือครอง' : ''}</span>}
-          {shown && !shown.found && <span className={css.assetWarn}>ไม่พบ {shown.tag} ในทะเบียนทรัพย์สิน — ตรวจตัวสะกดอีกครั้ง หรือส่งได้เลย ทีม IT จะตรวจสอบให้</span>}
-        </div>
-        {myAssets.length > 0 && (
-          <div className={css.chips}>
-            <span style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>อุปกรณ์ที่คุณถือครอง:</span>
-            {myAssets.map(a => <button key={a.tag} type="button" className={`tag tag-outline ${css.chip}`} aria-pressed={nt.assetTag === a.tag} onClick={() => set('assetTag', a.tag)}>{a.tag} · {a.model}</button>)}
-          </div>
-        )}
       </div>
       <div className="field"><label htmlFor="nt-desc">5. รายละเอียดอาการที่พบ / สิ่งที่ต้องการให้ซ่อม</label><textarea id="nt-desc" className={`input ${css.desc}`} value={nt.desc} onChange={e => set('desc', e.target.value)} maxLength={5000} placeholder="อธิบายสิ่งที่เกิดขึ้น เกิดเมื่อไร ทำอะไรไปแล้วบ้าง" /></div>
       <div className="col" style={{ gap: 10 }}>

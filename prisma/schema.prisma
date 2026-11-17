@@ -10,16 +10,18 @@ datasource db {
 /// Login account. `perms` holds module keys (see src/lib/domain.ts MODULES);
 /// it starts as the role default and can be adjusted per person by an Admin.
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
+  id           String   @id @default(cuid())
+  username     String   @unique
   passwordHash String
   name         String
   role         String
   perms        String[]
-  active       Boolean   @default(true)
-  empId        String?   @unique
-  employee     Employee? @relation(fields: [empId], references: [id], onDelete: SetNull)
-  createdAt    DateTime  @default(now())
+  active       Boolean  @default(true)
+  /// Work contact details: email receives notifications and password-reset links; phone is shown to technicians
+  email        String   @default("")
+  phone        String   @default("")
+  dept         String   @default("")
+  createdAt    DateTime @default(now())
 
   sessions        Session[]
   passwordResets  PasswordReset[]
@@ -51,42 +53,6 @@ model PasswordReset {
   usedAt    DateTime?
 
   @@index([userId, createdAt])
-}
-
-model Employee {
-  id       String  @id // EMP-0001
-  name     String
-  position String  @default("")
-  dept     String
-  email    String  @default("")
-  phone    String  @default("")
-  user     User?
-  assets   Asset[]
-}
-
-model Asset {
-  tag         String       @id // NB-0101
-  type        String
-  model       String
-  serial      String       @default("")
-  warrantyEnd DateTime?    @db.Date
-  holderId    String?
-  holder      Employee?    @relation(fields: [holderId], references: [id], onDelete: SetNull)
-  history     AssetEvent[]
-  createdAt   DateTime     @default(now())
-
-  @@index([holderId])
-}
-
-model AssetEvent {
-  id       String   @id @default(cuid())
-  assetTag String
-  asset    Asset    @relation(fields: [assetTag], references: [tag], onDelete: Cascade)
-  t        DateTime @default(now())
-  text     String
-  by       String
-
-  @@index([assetTag, t])
 }
 
 /// A product in stock. `price` = selling price incl. VAT (storefront); `cost` = purchase cost
@@ -315,7 +281,7 @@ model AuditLog {
   @@index([cat])
 }
 
-/// Document number sequences (tck, pr, emp, ord)
+/// Document number sequences (tck, pr, ord)
 model Counter {
   key   String @id
   value Int
