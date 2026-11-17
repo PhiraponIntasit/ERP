@@ -410,6 +410,7 @@ model Order {
 
   @@index([customerId, createdAt])
   @@index([status, expiresAt])
+  @@index([couponCode])
 }
 
 /// Name and price are copied at order time, so later price changes never alter an order.
@@ -421,6 +422,8 @@ model OrderLine {
   item    InventoryItem  @relation(fields: [sku], references: [sku])
   name    String
   price   Decimal        @db.Decimal(12, 2)
+  /// Purchase cost per unit when the order was placed — for gross profit (null on orders before it was recorded)
+  cost    Decimal?       @db.Decimal(12, 2)
   qty     Int
   serials SerialNumber[]
 
@@ -459,14 +462,22 @@ model PaymentEvent {
 }
 
 model Coupon {
-  code       String   @id
+  /// Upper-case code customers type at checkout
+  code            String   @id
   /// percent | fixed
-  kind       String
-  value      Decimal  @db.Decimal(12, 2)
-  minSpend   Decimal  @default(0) @db.Decimal(12, 2)
-  startsAt   DateTime
-  endsAt     DateTime
-  usageLimit Int?
-  used       Int      @default(0)
-  active     Boolean  @default(true)
+  kind            String
+  value           Decimal  @db.Decimal(12, 2)
+  /// Cap on a percent discount (baht); null = no cap
+  maxDiscount     Decimal? @db.Decimal(12, 2)
+  /// Minimum goods value (before discount) for the code to apply
+  minSpend        Decimal  @default(0) @db.Decimal(12, 2)
+  startsAt        DateTime
+  endsAt          DateTime
+  usageLimit      Int?
+  /// Orders currently holding a use (unpaid orders that expire or are cancelled give theirs back)
+  used            Int      @default(0)
+  oncePerCustomer Boolean  @default(false)
+  note            String   @default("")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
 }

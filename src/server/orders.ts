@@ -10,6 +10,7 @@ import { promptPayPayload } from '@/lib/promptpay';
 import { provinceOf, shippingFee, shippingNote } from '@/lib/shipping';
 import { baht, DISPLAY_TZ } from '@/lib/domain';
 import { appUrl, sendMail } from './mail';
+import { checkCoupon, claimCoupon, releaseCoupon } from './coupons';
 
 // Checkout → payment → stock, all on the server (amounts never come from the browser):
 //   placeOrder   cart → Order(pending_payment) + hold stock (reserved) + Payment with a PromptPay QR, one transaction
@@ -34,12 +35,12 @@ const SYSTEM = ['ระบบชำระเงิน', 'ระบบ'] as const
 
 // ── cart & totals ──
 
-export type CheckoutLine = { sku: string; name: string; price: number; qty: number; available: number; active: boolean };
+export type CheckoutLine = { sku: string; name: string; price: number; cost: number; qty: number; available: number; active: boolean };
 
 export async function cartLines(customerId: string): Promise<CheckoutLine[]> {
   const cart = await db.cart.findUnique({ where: { customerId }, include: { items: { include: { item: true }, orderBy: { sku: 'asc' } } } });
   return (cart?.items ?? []).map(ci => ({
-    sku: ci.sku, name: ci.item.name, price: num(ci.item.price), qty: ci.qty,
+    sku: ci.sku, name: ci.item.name, price: num(ci.item.price), cost: num(ci.item.cost), qty: ci.qty,
     available: ci.item.qty - ci.item.reserved, active: ci.item.active,
   }));
 }
@@ -73,18 +74,22 @@ export const addressText = (a: AddressIn) => `${a.line1} ต.${a.subdistrict} �
 
 const fmtTime = (d: Date) => d.toLocaleString('th-TH', { timeZone: DISPLAY_TZ, hour: '2-digit', minute: '2-digit' });
 
-export async function placeOrder(customer: Customer, addr: AddressIn, saveAddress: boolean): Promise<string> {
+export async function placeOrder(customer: Customer, addr: AddressIn, saveAddress: boolean, couponIn = ''): Promise<string> {
   await expireDue(); // stock held by orders nobody paid for goes back on sale first
   const lines = await cartLines(customer.id);
   if (!lines.length) throw new Fail('ตะกร้าว่าง');
   const off = lines.find(l => !l.active);
   if (off) throw new Fail(`${off.name} หยุดขายแล้ว — นำออกจากตะกร้าก่อน`);
-  const t = totals(lines, addr.province);
-  if (!(t.total > 0)) throw new Fail('ยอดชำระไม่ถูกต้อง');
 
   const now = new Date(), expiresAt = new Date(now.getTime() + paymentConfig.payMinutes() * 60_000);
   const year = now.toLocaleDateString('en-CA', { timeZone: DISPLAY_TZ, year: 'numeric' });
-  const id = await db.$transaction(async tx => {
+  const { id, t } = await db.$transaction(async tx => {
+    // Coupon first: checked and one use taken inside the same transaction, so a limited code can't be oversold
+    const subtotal = totals(lines, addr.province).subtotal;
+    const cp = couponIn.trim() ? await checkCoupon(tx, couponIn, customer.id, subtotal, now) : null;
+    if (cp && !(await claimCoupon(tx, cp.coupon.code))) throw new Fail('คูปองนี้ถูกใช้ครบจำนวนแล้ว');
+    const t = totals(lines, addr.province, cp?.discount ?? 0);
+    if (!(t.total > 0)) throw new Fail('ยอดชำระไม่ถูกต้อง');
     for (const l of lines)
       if (!(await reserve(tx, l.sku, l.qty))) {
         const it = await tx.inventoryItem.findUniqueOrThrow({ where: { sku: l.sku } });
@@ -94,9 +99,9 @@ export async function placeOrder(customer: Customer, addr: AddressIn, saveAddres
     await tx.order.create({
       data: {
         id, customerId: customer.id, status: 'pending_payment',
-        subtotal: t.subtotal, discount: t.discount, shippingFee: t.shippingFee, total: t.total,
+        subtotal: t.subtotal, discount: t.discount, shippingFee: t.shippingFee, total: t.total, couponCode: cp?.coupon.code ?? null,
         shipName: addr.name, shipPhone: addr.phone, shipAddress: addressText(addr), expiresAt,
-        lines: { create: lines.map(l => ({ sku: l.sku, name: l.name, price: l.price, qty: l.qty })) },
+        lines: { create: lines.map(l => ({ sku: l.sku, name: l.name, price: l.price, cost: l.cost, qty: l.qty })) },
         payments: { create: { provider: 'demo_promptpay', amount: t.total, providerRef: 'demo_' + randomBytes(12).toString('hex'), qrImage: promptPayPayload(paymentConfig.promptPayId(), t.total), expiresAt } },
       },
     });
@@ -105,14 +110,14 @@ export async function placeOrder(customer: Customer, addr: AddressIn, saveAddres
       const first = !(await tx.address.count({ where: { customerId: customer.id } }));
       await tx.address.create({ data: { customerId: customer.id, ...addr, isDefault: first } });
     }
-    await log(tx, ...asCustomer(customer), 'สั่งซื้อ', id, `${lines.map(l => `${l.name} × ${l.qty}`).join(', ')} · ค่าส่ง ${baht(t.shippingFee)} · รวม ${baht(t.total)}`);
-    return id;
+    await log(tx, ...asCustomer(customer), 'สั่งซื้อ', id, `${lines.map(l => `${l.name} × ${l.qty}`).join(', ')}` + (cp ? ` · คูปอง ${cp.coupon.code} −${baht(t.discount)}` : '') + ` · ค่าส่ง ${baht(t.shippingFee)} · รวม ${baht(t.total)}`);
+    return { id, t };
   });
 
   const base = appUrl();
   await mailSafe(customer.email, `ยืนยันคำสั่งซื้อ ${id} — กรุณาชำระเงินภายใน ${fmtTime(expiresAt)} น.`,
     [`เรียนคุณ${customer.name}`, '', `ได้รับคำสั่งซื้อ ${id} แล้ว ยอดชำระ ${baht(t.total)}`, ...lines.map(l => `- ${l.name} × ${l.qty} = ${baht(l.price * l.qty)}`),
-      `ค่าจัดส่ง ${baht(t.shippingFee)}`, '', `ชำระด้วย PromptPay QR ภายใน ${fmtTime(expiresAt)} น. (${paymentConfig.payMinutes()} นาที) หากเลยเวลาคำสั่งซื้อจะถูกยกเลิกอัตโนมัติ`,
+      t.discount ? `ส่วนลด −${baht(t.discount)}` : '', `ค่าจัดส่ง ${baht(t.shippingFee)}`, '', `ชำระด้วย PromptPay QR ภายใน ${fmtTime(expiresAt)} น. (${paymentConfig.payMinutes()} นาที) หากเลยเวลาคำสั่งซื้อจะถูกยกเลิกอัตโนมัติ`,
       base ? `ชำระเงิน: ${base}/pay/${id}` : ''].join('\n'));
   return id;
 }
@@ -127,6 +132,8 @@ export async function expireOrder(id: string, to: 'expired' | 'cancelled', by: r
     const lines = await tx.orderLine.findMany({ where: { orderId: id } });
     for (const l of lines) if (!(await release(tx, l.sku, l.qty))) throw new Error(`reserved stock missing for ${l.sku}`);
     await tx.payment.updateMany({ where: { orderId: id, status: 'pending' }, data: { status: 'expired' } });
+    const o = await tx.order.findUniqueOrThrow({ where: { id }, select: { couponCode: true } });
+    if (o.couponCode) await releaseCoupon(tx, o.couponCode); // never paid, so the use goes back
     await log(tx, ...by, to === 'expired' ? 'หมดเวลาชำระเงิน · คืนสต็อกที่จอง' : 'ยกเลิกคำสั่งซื้อ · คืนสต็อกที่จอง', id, lines.map(l => `${l.name} × ${l.qty}`).join(', '));
     return true;
   });

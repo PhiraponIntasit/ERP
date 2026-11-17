@@ -2,7 +2,7 @@
 
 export const MODULES = [
   ['dashboard', 'แดชบอร์ดภาพรวม'], ['ticket_new', 'แจ้งปัญหา'], ['my_tickets', 'คำร้องของฉัน'],
-  ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'],
+  ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปองส่วนลด'], ['sales', 'รายงานยอดขาย'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
   ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
@@ -13,7 +13,7 @@ export const isModule = (m: string): m is Module => (ALL as string[]).includes(m
 
 export const MOD_PATH: Record<Module, string> = {
   dashboard: '/dashboard', ticket_new: '/tickets/new', my_tickets: '/tickets/mine', dispatch: '/dispatch',
-  tickets_work: '/work', inventory: '/inventory', products: '/products', orders: '/orders', purchase: '/purchase', approvals: '/approvals',
+  tickets_work: '/work', inventory: '/inventory', products: '/products', orders: '/orders', coupons: '/coupons', sales: '/sales', purchase: '/purchase', approvals: '/approvals',
   users: '/users', audit: '/audit',
 };
 
@@ -21,7 +21,7 @@ export const HDR: Record<Module, [string, string]> = {
   dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], ticket_new: ['Helpdesk', 'แจ้งปัญหา / ขอรับบริการ'],
   my_tickets: ['Helpdesk', 'คำร้องของฉัน'], dispatch: ['IT Management', 'ศูนย์มอบหมายงานซ่อม'],
   tickets_work: ['IT Support', 'งานที่ได้รับมอบหมาย'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
-  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'],
+  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
   users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };
@@ -39,14 +39,14 @@ export const ROLE_PERMS: Record<Role, Module[]> = {
   storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'orders', 'purchase'],
   itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory'],
   itmanager: ['ticket_new', 'my_tickets', 'dispatch'],
-  manager: ['dashboard', 'ticket_new', 'my_tickets', 'orders', 'approvals', 'audit'],
-  executive: ['dashboard', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
+  manager: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'orders', 'coupons', 'approvals', 'audit'],
+  executive: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
   admin: ALL,
 };
 
 export const SLA_H: Record<string, number> = { critical: 4, high: 8, medium: 24, low: 72 };
 export const AUDIT_CATS: Record<string, string> = {
-  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน',
+  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน', coupon: 'คูปอง',
   employee: 'พนักงาน', asset: 'ทรัพย์สิน', // older records only: the employee & asset registers were removed
   system: 'ระบบ',
 };
@@ -135,3 +135,12 @@ export function canDecide(p: { requesterId: string; status: string; approver1Id:
 export const PR_SEE_ALL = ['admin', 'manager', 'executive'];
 /** Who may cancel a paid order and return the customer's money. */
 export const REFUND_ROLES = ['admin', 'manager'];
+
+/** Wall-clock `ymd` + `hms` in DISPLAY_TZ → the instant (works for any zone, with or without DST). */
+export function zonedTime(ymd: string, hms = '00:00:00', tz = DISPLAY_TZ): Date {
+  const guess = new Date(`${ymd}T${hms}Z`);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    .formatToParts(guess).map(x => [x.type, x.value]));
+  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return new Date(guess.getTime() - (asUtc - guess.getTime()));
+}

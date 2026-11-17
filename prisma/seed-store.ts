@@ -95,3 +95,41 @@ export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
 }
 
 const SERIAL_CATS = ['cpu', 'vga', 'mainboard'];
+
+/** Demo coupons and about two months of finished orders, so the sales report has something to show.
+ *  Past orders are already delivered, so they don't touch today's stock; serial-tracked items are left out. */
+export async function seedSales(db: PrismaClient, passwordHash: string) {
+  const day = 864e5, now = Date.now();
+  await db.coupon.createMany({ data: [
+    { code: 'WELCOME10', kind: 'percent', value: 10, maxDiscount: 500, minSpend: 0, startsAt: new Date(now - 90 * day), endsAt: new Date(now + 275 * day), oncePerCustomer: true, note: 'ลูกค้าใหม่ ลด 10%' },
+    { code: 'SAVE300', kind: 'fixed', value: 300, minSpend: 3000, startsAt: new Date(now - 60 * day), endsAt: new Date(now + 30 * day), usageLimit: 100, note: 'ซื้อครบ 3,000 ลด 300' },
+    { code: 'EARLYBIRD', kind: 'percent', value: 15, maxDiscount: 1000, minSpend: 5000, startsAt: new Date(now - 120 * day), endsAt: new Date(now - 60 * day), note: 'โปรเปิดร้าน (หมดอายุแล้ว)' },
+  ] });
+
+  const people = ['สมชาย ใจกว้าง', 'ศิริพร แสงทอง', 'ณัฐพล ศรีสุข', 'กมลชนก บุญมา', 'ธนกร วงศ์ดี', 'พิมพ์ชนก ทองคำ'];
+  const customers = await Promise.all(people.map((name, i) => db.customer.create({ data: { id: `cus-${i + 1}`, email: `buyer${i + 1}@example.com`, passwordHash, name, phone: `08000000${String(i).padStart(2, '0')}` } })));
+  const items = await db.inventoryItem.findMany({ where: { active: true, serialTracked: false, price: { gt: 0 } }, orderBy: { sku: 'asc' } });
+  let seed = 7;
+  const rnd = () => (seed = (seed * 48271) % 2147483647) / 2147483647; // deterministic, so every fresh database looks the same
+  const year = new Date().getFullYear();
+  for (let k = 0; k < 48; k++) {
+    const c = customers[Math.floor(rnd() * customers.length)];
+    const picks = [...new Set(Array.from({ length: 1 + Math.floor(rnd() * 3) }, () => items[Math.floor(rnd() * items.length)]))];
+    const lines = picks.map(i => ({ sku: i.sku, name: i.name, price: Number(i.price), cost: Number(i.cost), qty: 1 + Math.floor(rnd() * 2) }));
+    const subtotal = Math.round(lines.reduce((a, l) => a + l.price * l.qty, 0) * 100) / 100;
+    const coupon = subtotal >= 3000 && rnd() < 0.25 ? 'SAVE300' : null, discount = coupon ? 300 : 0;
+    const metro = rnd() < 0.6, shippingFee = subtotal - discount >= 2000 || metro ? 0 : 150;
+    const paidAt = new Date(now - (1 + Math.floor(rnd() * 58)) * day - Math.floor(rnd() * 10) * 3600e3);
+    const n = (await db.counter.update({ where: { key: 'ord' }, data: { value: { increment: 1 } } })).value - 1;
+    const id = `ORD-${year}-${String(n).padStart(6, '0')}`;
+    await db.order.create({ data: {
+      id, customerId: c.id, status: 'completed', subtotal, discount, shippingFee, total: subtotal - discount + shippingFee, couponCode: coupon,
+      shipName: c.name, shipPhone: c.phone, shipAddress: metro ? '12 ถนนสุขุมวิท ต.คลองเตย อ.คลองเตย จ.กรุงเทพมหานคร 10110' : '5 ถนนห้วยแก้ว ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200',
+      createdAt: new Date(paidAt.getTime() - 5 * 60e3), expiresAt: new Date(paidAt.getTime() + 10 * 60e3), paidAt,
+      shippedAt: new Date(paidAt.getTime() + day), completedAt: new Date(paidAt.getTime() + 3 * day), carrier: 'Kerry Express', trackingNo: `KEX${String(100000 + n)}`,
+      lines: { create: lines },
+      payments: { create: { provider: 'demo_promptpay', amount: subtotal - discount + shippingFee, status: 'successful', providerRef: `demo_seed_${n}`, expiresAt: new Date(paidAt.getTime() + 10 * 60e3), paidAt } },
+    } });
+  }
+  await db.coupon.update({ where: { code: 'SAVE300' }, data: { used: await db.order.count({ where: { couponCode: 'SAVE300' } }) } });
+}
