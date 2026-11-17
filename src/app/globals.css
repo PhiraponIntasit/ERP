@@ -5,12 +5,14 @@ body { font-variant-numeric: lining-nums; margin: 0; transition: background-colo
 
 /* Light theme: blue accent replaces the system gold */
 html[data-theme="light"] {
+  --brand-blue: #2563eb; --brand-orange: #f97316;
   --color-accent: #2f63b8; --color-accent-2: #2f63b8;
   --color-accent-100: #eef3fb; --color-accent-200: #d9e4f6; --color-accent-300: #b6cbee; --color-accent-400: #85a6e0; --color-accent-500: #4f7fd0; --color-accent-600: #2a58a6; --color-accent-700: #234d93; --color-accent-800: #1a3a70; --color-accent-900: #12284d;
   --color-accent-2-100: #eef3fb; --color-accent-2-200: #d9e4f6; --color-accent-2-300: #b6cbee; --color-accent-2-400: #85a6e0; --color-accent-2-500: #4f7fd0; --color-accent-2-600: #2a58a6; --color-accent-2-700: #234d93; --color-accent-2-800: #1a3a70; --color-accent-2-900: #12284d;
 }
 /* Dark theme: warm near-black ground, cream text, gold accent */
 html[data-theme="dark"] {
+  --brand-blue: #60a5fa; --brand-orange: #fb923c;
   color-scheme: dark;
   --color-bg: #1c1a18; --color-surface: #262320; --color-text: #ece7e1; --color-accent: #c99549; --color-accent-2: #c99549;
   --color-divider: color-mix(in srgb, #ece7e1 16%, transparent);
@@ -93,8 +95,8 @@ a:hover { color: var(--color-accent-600); }
 .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { border-right: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 0; height: 100vh;
   padding: var(--space-4) var(--space-3); overflow-y: auto; }
-.brand { font-family: var(--font-heading); font-size: 26px; font-weight: 500; line-height: 1; }
-.brand-sub { font-size: 11px; color: var(--color-neutral-700); margin-top: 4px; }
+.brand { color: var(--color-text); }
+.brand-sub { font-size: 11px; color: var(--color-neutral-700); margin-top: 6px; }
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .sidebar-body { display: flex; flex-direction: column; gap: var(--space-4); flex: 1; }
 .menu-btn { display: none; }
@@ -120,7 +122,6 @@ a:hover { color: var(--color-accent-600); }
   /* phones/tablets: compact sticky bar; the menu opens below it */
   .sidebar { position: sticky; top: 0; z-index: 25; height: auto; max-height: 100vh; gap: 0; padding: var(--space-3) var(--space-4);
     border-right: 0; border-bottom: 1px solid var(--color-divider); background: var(--color-bg); }
-  .brand { font-size: 22px; }
   .brand-sub { display: none; }
   .menu-btn { display: inline-flex; }
   .sidebar-body { display: none; padding-top: var(--space-3); }
