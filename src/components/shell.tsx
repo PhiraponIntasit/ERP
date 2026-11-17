@@ -6,6 +6,7 @@ import { logout } from '@/server/actions/auth';
 import { HDR, MOD_PATH, type Module } from '@/lib/domain';
 import { BellIcon, LogoutIcon, MenuIcon, XIcon } from './icons';
 import { ThemeToggle } from './theme-toggle';
+import { Logo } from './logo';
 import { ChangePasswordButton } from './change-password';
 
 const moduleFor = (path: string) => (Object.entries(MOD_PATH) as [Module, string][]).find(([, p]) => path === p || path.startsWith(p + '/'))?.[0];
@@ -21,7 +22,7 @@ export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: s
     <aside className={`sidebar${open ? ' open' : ''}`}>
       <div className="sidebar-head">
         <div style={{ padding: '0 8px', minWidth: 0 }}>
-          <div className="brand">IT Products Store</div>
+          <div className="brand"><Logo height={34} tagline={false} /></div>
           <div className="brand-sub">Store Management System</div>
         </div>
         <button className="btn btn-secondary btn-icon menu-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="app-menu"
