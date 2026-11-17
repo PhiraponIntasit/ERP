@@ -6,7 +6,7 @@ const SUPPLIER = 'บจก. ไอทีซัพพลาย'; // seeded suppl
 // Store schema: `price` is the selling price, `cost` the purchase cost; stock reserved for
 // unpaid orders is kept between 0 and what is on hand by the database itself.
 
-const SKU = 'CPU-R5-7600'; // seeded: cost 6,290 · price 6,990
+const SKU = 'CPU-R5-7600'; // seeded: cost 6,080 (ex-VAT) · price 6,990
 
 test('purchase requests are priced at cost, not at the selling price', async ({ page }) => {
   const item = await db.inventoryItem.findUniqueOrThrow({ where: { sku: SKU } });

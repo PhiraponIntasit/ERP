@@ -58,7 +58,7 @@ test('small PR: one approval, PO, then receiving adds stock', async ({ page }) =
 test('PR over the limit needs Manager then a different Executive', async ({ page }) => {
   const tag = `E2E large ${Date.now()}`;
   await loginAs(page, USERS.storekeeper);
-  const id = await createPR(page, tag, 'Dell UltraSharp 27" 4K', 5); // 5 × 12,900 + VAT > 50,000
+  const id = await createPR(page, tag, 'Dell UltraSharp 27" 4K', 5); // 5 × ฿12,250 cost + VAT > ฿50,000
 
   await loginAs(page, USERS.manager);
   await page.goto('/approvals');
