@@ -4,19 +4,19 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 
 type Specs = Prisma.InputJsonObject;
 
-const CATEGORIES: [string, string][] = [
+export const CATEGORIES: [string, string][] = [
   ['cpu', 'ซีพียู (CPU)'], ['mainboard', 'เมนบอร์ด'], ['ram', 'แรม (RAM)'], ['vga', 'การ์ดจอ'],
   ['ssd', 'SSD / สตอเรจ'], ['psu', 'พาวเวอร์ซัพพลาย'], ['case', 'เคส'], ['cooler', 'ชุดระบายความร้อน'],
   ['monitor', 'จอภาพ'], ['peripheral', 'คีย์บอร์ด & เมาส์'], ['cable', 'สายและอะแดปเตอร์'],
   ['notebook-parts', 'อะไหล่โน้ตบุ๊ก'], ['consumable', 'วัสดุสิ้นเปลือง'],
 ];
 
-const BRANDS = [
+export const BRANDS = [
   'AMD', 'Intel', 'ASUS', 'MSI', 'Gigabyte', 'Kingston', 'Corsair', 'G.Skill', 'Sapphire', 'WD', 'Crucial', 'Samsung',
   'Cooler Master', 'Seasonic', 'Lian Li', 'Montech', 'DeepCool', 'Thermalright', 'NZXT', 'LG', 'Dell', 'Logitech', 'HP', 'Lenovo', 'Generic',
 ];
 
-const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 /** Typical gross margin by category (share of the selling price before VAT) — thin on CPUs and graphics
  *  cards, wide on cables and accessories, as in Thai IT retail. Purchase cost is ex-VAT. */
