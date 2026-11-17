@@ -17,7 +17,7 @@
 .tileBar button:disabled { opacity: .3; cursor: default; }
 .addTile { aspect-ratio: 1; border: 1px dashed var(--color-neutral-600); border-radius: 10px; display: grid; place-items: center; text-align: center; font-size: 13px; color: var(--color-neutral-700); cursor: pointer; }
 .check { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
-.ok { color: var(--color-accent); }
+.ok { color: var(--color-accent-700); font-weight: 600; }
 .miss { color: var(--color-neutral-700); }
 .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed var(--color-divider); }
 .specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }

@@ -1,5 +1,5 @@
 /* Justified text reads well in wide desktop cards but leaves big word gaps on a phone. */
-.desc { text-align: justify; margin: 0; white-space: pre-line; }
+.desc { margin: 0; white-space: pre-line; }
 @media (max-width: 860px) { .desc { text-align: left; } }
 
 .pics { display: flex; gap: 8px; flex-wrap: wrap; }

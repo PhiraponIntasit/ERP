@@ -9,13 +9,13 @@ export function ReceiptDialog({ r, onClose }: { r: Receipt; onClose: () => void 
     const el = document.documentElement, t = el.getAttribute('data-theme');
     el.setAttribute('data-theme', 'light'); window.print(); el.setAttribute('data-theme', t ?? 'light');
   };
-  const h = { fontFamily: 'var(--font-heading)', fontWeight: 500, lineHeight: 1 } as const;
+  const h = { fontFamily: 'var(--font-heading)', fontWeight: 700, lineHeight: 1.1 } as const;
   return (
     <Dialog bare onClose={onClose}>
       <div className="po-wrap">
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" style={{ background: 'var(--color-bg)' }} onClick={onClose}>ปิด</button>
-          <button className="btn btn-primary" style={{ background: 'var(--color-bg)' }} onClick={print}><PrinterIcon /> พิมพ์ / บันทึกเป็น PDF</button>
+          <button className="btn btn-secondary" onClick={onClose}>ปิด</button>
+          <button className="btn btn-primary" onClick={print}><PrinterIcon /> พิมพ์ / บันทึกเป็น PDF</button>
         </div>
         <div className="print-sheet" id="receipt-print" aria-label={`ใบเสร็จ ${r.no}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, borderBottom: '1px solid var(--color-text)', paddingBottom: 16 }}>

@@ -28,7 +28,7 @@ export function Pager({ p, param = 'page', keep = {} }: { p: Page; param?: strin
 function Step({ n, ok, href, label }: { n: number; ok: boolean; href: (n: number) => string; label: string }) {
   return ok
     ? <Link href={href(n)} scroll={false} className="btn btn-ghost" style={{ textDecoration: 'none' }}>{label}</Link>
-    : <span className="btn btn-ghost" aria-disabled style={{ opacity: .4, pointerEvents: 'none' }}>{label}</span>;
+    : <span className="btn btn-ghost" aria-disabled style={{ color: 'var(--color-neutral-500)', pointerEvents: 'none' }}>{label}</span>;
 }
 
 /** 1 … 4 5 [6] 7 8 … 20 — 0 marks a gap. */

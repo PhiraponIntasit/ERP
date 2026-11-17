@@ -24,7 +24,7 @@ export function SuppliersView({ rows }: { rows: Row[] }) {
           <thead><tr><th>ชื่อผู้ขาย</th><th>เลขผู้เสียภาษี</th><th>ติดต่อ</th><th className="r">ใบขอซื้อ</th><th>สถานะ</th><th className="r">ดำเนินการ</th></tr></thead>
           <tbody>
             {rows.map(s => (
-              <tr key={s.id} style={s.active ? undefined : { opacity: 0.6 }}>
+              <tr key={s.id} style={s.active ? undefined : { background: 'var(--color-neutral-100)' }}>
                 <td>{s.name}</td>
                 <td className="tnum nw">{s.taxId || '—'}</td>
                 <td style={{ fontSize: 13 }}>{[s.phone, s.email].filter(Boolean).join(' · ') || '—'}</td>

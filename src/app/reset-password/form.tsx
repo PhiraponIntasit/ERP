@@ -10,7 +10,7 @@ export function ResetForm({ token, username }: { token: string; username: string
     <form action={action} className="card elev-sm login-card">
       <div>
         <div className="card-kicker">Reset password</div>
-        <h2 style={{ margin: '6px 0 0', fontWeight: 500 }}>ตั้งรหัสผ่านใหม่</h2>
+        <h2 style={{ margin: '6px 0 0', fontWeight: 700 }}>ตั้งรหัสผ่านใหม่</h2>
       </div>
       {state.done ? (<>
         <div role="status" style={{ fontSize: 14, borderTop: '1px solid var(--color-accent)', paddingTop: 10 }}>ตั้งรหัสผ่านใหม่แล้ว ระบบออกจากระบบในทุกอุปกรณ์ให้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่</div>

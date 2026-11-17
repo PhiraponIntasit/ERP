@@ -21,8 +21,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="login-grid">
           <div className="login-intro">
             <div className="kicker">IT Products Store Management System · ระบบบริหารจัดการคลังสินค้าไอที</div>
-            <h1 style={{ fontSize: 46, fontWeight: 400, margin: 0, lineHeight: 1.2 }}>คลังสินค้า การจัดซื้อ และงานซ่อม ในระบบเดียว</h1>
-            <p style={{ textAlign: 'justify', maxWidth: '46ch', color: 'var(--color-neutral-700)', margin: 0 }}>เข้าสู่ระบบด้วยบัญชีที่ผู้ดูแลระบบสร้างให้ เมนูและสิทธิ์การใช้งานจะแสดงตามบทบาทและสิทธิ์รายบุคคลของคุณ</p>
+            <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, lineHeight: 1.25, letterSpacing: '-.02em' }}>คลังสินค้า การจัดซื้อ และงานซ่อม ในระบบเดียว</h1>
+            <p style={{ textAlign: 'left', maxWidth: '46ch', color: 'var(--color-neutral-700)', margin: 0 }}>เข้าสู่ระบบด้วยบัญชีที่ผู้ดูแลระบบสร้างให้ เมนูและสิทธิ์การใช้งานจะแสดงตามบทบาทและสิทธิ์รายบุคคลของคุณ</p>
             {showDemo && <DemoAccounts next={next} users={demo.map(u => ({ username: u.username, name: u.name, roleLabel: ROLE_LABEL[u.role as Role] ?? u.role }))} />}
             {showDemo && <a href="/demo-shop" style={{ fontSize: 14 }}>เดโมหน้าร้าน — สั่งซื้อและชำระเงินในฐานะลูกค้าตัวอย่าง →</a>}
           </div>
