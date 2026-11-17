@@ -4,7 +4,10 @@ body { font-variant-numeric: lining-nums; margin: 0; transition: background-colo
 
 /* Light theme = the tokens in classical.css. Dark theme: deep slate ground, raised slate cards, the same
    cobalt accent lifted for dark backgrounds. Text stays solid and bright (≥ 7:1), never translucent. */
+/* Logo colours (src/components/logo.tsx) */
+html[data-theme="light"] { --brand-blue: #2563eb; --brand-orange: #f97316; }
 html[data-theme="dark"] {
+  --brand-blue: #60a5fa; --brand-orange: #fb923c;
   color-scheme: dark;
   --color-bg: #0e1522; --color-surface: #172133; --color-text: #eef2f8; --color-text-2: #c3cddb;
   --color-accent: #6f9bff; --color-accent-2: #f0ad4a; --color-danger: #ff9c94; --color-success: #6fdba8; --color-btn: #2a4db3; --color-btn-hover: #3459c4;
@@ -89,8 +92,8 @@ a:hover { color: var(--color-accent-800); }
 .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { border-right: 1px solid var(--color-divider); background: var(--color-surface); display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 0; height: 100vh;
   padding: var(--space-4) var(--space-3); overflow-y: auto; }
-.brand { font-family: var(--font-heading); font-size: 22px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
-.brand-sub { font-size: 12px; color: var(--color-text-2); margin-top: 4px; }
+.brand { color: var(--color-text); }
+.brand-sub { font-size: 12px; color: var(--color-text-2); margin-top: 6px; }
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .sidebar-body { display: flex; flex-direction: column; gap: var(--space-4); flex: 1; }
 .menu-btn { display: none; }
@@ -116,7 +119,6 @@ a:hover { color: var(--color-accent-800); }
   /* phones/tablets: compact sticky bar; the menu opens below it */
   .sidebar { position: sticky; top: 0; z-index: 25; height: auto; max-height: 100vh; gap: 0; padding: var(--space-3) var(--space-4);
     border-right: 0; border-bottom: 1px solid var(--color-divider); background: var(--color-surface); }
-  .brand { font-size: 22px; }
   .brand-sub { display: none; }
   .menu-btn { display: inline-flex; }
   .sidebar-body { display: none; padding-top: var(--space-3); }
