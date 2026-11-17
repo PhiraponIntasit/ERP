@@ -9,8 +9,6 @@
 .cat svg { color: var(--color-accent-700); }
 .urg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .slaHint { font-size: 12px; color: var(--color-neutral-700); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
-.chip { background: transparent; cursor: pointer; font-family: inherit; }
 .form .desc { min-height: 130px; }
 .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 .thumb { width: 100%; aspect-ratio: 4 / 3; }
@@ -52,7 +50,3 @@
 /* asset tag + scan button */
 .assetRow { display: flex; gap: 8px; align-items: stretch; }
 .assetRow > :global(.input) { flex: 1; min-width: 0; }
-.assetCheck { font-size: 13px; margin-top: 6px; min-height: 1em; }
-.assetCheck:empty { display: none; }
-.assetOk { color: var(--color-accent-700); }
-.assetWarn { color: var(--color-accent-800); border-left: 2px solid var(--color-accent); padding-left: 8px; display: block; }

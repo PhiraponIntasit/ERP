@@ -1,4 +1,4 @@
-// Copies every ticket photo from the Vercel Blob store into a local folder.
+// Copies every uploaded photo (repair tickets and product photos share the `tickets/` prefix) from the Vercel Blob store into a local folder.
 // Incremental: files already in the folder are skipped, so it can run daily.
 //   BLOB_READ_WRITE_TOKEN=… npm run backup:photos -- ./backup/photos
 //   or, for a store connected with OIDC: `npx vercel env pull` (gives BLOB_STORE_ID + VERCEL_OIDC_TOKEN, valid ~12 h), then run it with those

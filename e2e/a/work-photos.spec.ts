@@ -10,7 +10,7 @@ let tech = '';
 
 test.describe.configure({ mode: 'serial' });
 test.beforeAll(async () => {
-  const u = await makeUser(`${P}${Date.now() % 100000}`, PW, 'itsupport', ['ticket_new', 'my_tickets', 'tickets_work', 'inventory', 'employees', 'assets']);
+  const u = await makeUser(`${P}${Date.now() % 100000}`, PW, 'itsupport', ['ticket_new', 'my_tickets', 'tickets_work', 'inventory']);
   tech = u.username;
   const req = await db.user.findUniqueOrThrow({ where: { username: USERS.employee } });
   await db.ticket.create({ data: { id, title: `${T} จอกระพริบ`, cat: 'monitor', urgency: 'medium', desc: '-', requesterId: req.id, assigneeId: u.id, status: 'progress' } });

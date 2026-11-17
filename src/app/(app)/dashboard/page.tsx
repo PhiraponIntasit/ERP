@@ -16,10 +16,10 @@ export default async function DashboardPage() {
   const me = await requirePage('dashboard');
   const since = new Date(Date.now() - 8 * 864e5);
   const techs = await db.user.findMany({ where: { role: 'itsupport', active: true }, orderBy: { id: 'asc' }, select: { id: true, name: true } });
-  const [stats, { items, open, lowAll, lowNoPR }, assetsTotal, assetsHeld, moves, recent] = await Promise.all([
+  const [stats, { items, open, lowAll, lowNoPR }, listed, moves, recent] = await Promise.all([
     dashboardStats(techs.map(t => t.id)),
     lowStock(),
-    db.asset.count(), db.asset.count({ where: { holderId: { not: null } } }),
+    db.inventoryItem.count({ where: { active: true } }),
     db.stockMove.findMany({ where: { t: { gte: since } }, select: { t: true, type: true, qty: true } }),
     db.ticket.findMany({ orderBy: { created: 'desc' }, take: 6, include: ticketInclude }),
   ]);
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     { label: 'รออนุมัติจัดซื้อ', value: pendingAll, unit: 'ใบ', sub: `มูลค่า ${bahtS(prSum(PENDING))}`, page: 'approvals' },
     { label: 'ต่ำกว่าจุดสั่งซื้อ', value: lowAll.length, unit: 'รายการ', sub: `ยังไม่มีใบขอซื้อ ${lowNoPR.length} รายการ`, page: 'inventory' },
     { label: 'มูลค่าสินค้าคงคลัง', value: bahtS(stockVal), unit: '', sub: `${fmt(items.reduce((a, i) => a + i.qty, 0))} หน่วย · ${items.length} SKU`, page: 'inventory' },
-    { label: 'อุปกรณ์ที่ส่งมอบ', value: assetsHeld, unit: 'เครื่อง', sub: `ว่างในคลัง IT ${assetsTotal - assetsHeld} เครื่อง`, page: 'assets' },
+    { label: 'สินค้าที่ขายอยู่', value: listed, unit: 'รายการ', sub: `ซ่อนจากหน้าร้าน ${items.length - listed} รายการ`, page: 'products' },
   ];
   const groups = [
     { title: 'สถานะงานซ่อม', sub: `ทั้งหมด ${total} งาน`, rows: bars(Object.keys(ST).map(k => [ST[k][0], byStatus(k), k === 'new' ? 'var(--color-accent-700)' : undefined])) },
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     { title: 'มูลค่าการจัดซื้อตามสถานะ', sub: 'รวม VAT', rows: bars(Object.keys(PRST).map(k => [PRST[k][0], stats.prGrand(k)]), bahtS) },
   ];
   const days = [...Array(7)].map((_, k) => new Date(Date.now() - (6 - k) * 864e5));
-  const dayData = days.map(d => { const ms = moves.filter(m => dayKey(m.t) === dayKey(d)); return { d, inN: ms.filter(m => m.type === 'in').reduce((a, m) => a + m.qty, 0), outN: ms.filter(m => m.type === 'out').reduce((a, m) => a + m.qty, 0) }; });
+  const dayData = days.map(d => { const ms = moves.filter(m => dayKey(m.t) === dayKey(d)); return { d, inN: ms.filter(m => m.type === 'in').reduce((a, m) => a + m.qty, 0), outN: ms.filter(m => m.type !== 'in').reduce((a, m) => a + m.qty, 0) }; });
   const dmx = Math.max(1, ...dayData.map(x => Math.max(x.inN, x.outN)));
 
   return (
@@ -105,10 +105,10 @@ export default async function DashboardPage() {
           <div className="card-title">สินค้าต่ำกว่าจุดสั่งซื้อ</div>
           <div className="scroll-x">
             <table className="table">
-              <thead><tr><th>สินค้า</th><th className="r">คงเหลือ</th><th className="r">จุดสั่งซื้อ</th><th>สถานะ</th></tr></thead>
+              <thead><tr><th>สินค้า</th><th className="r">พร้อมใช้</th><th className="r">จุดสั่งซื้อ</th><th>สถานะ</th></tr></thead>
               <tbody>
                 {lowAll.map(i => (
-                  <tr key={i.sku}><td>{i.name}</td><td className="r tnum" style={{ color: 'var(--color-accent-800)' }}>{i.qty}</td><td className="r tnum">{i.min}</td>
+                  <tr key={i.sku}><td>{i.name}</td><td className="r tnum" style={{ color: 'var(--color-accent-800)' }}>{i.qty - i.reserved}</td><td className="r tnum">{i.min}</td>
                     <td><span className={`tag ${open.has(i.sku) ? 'tag-neutral' : 'tag-outline'}`}>{open.has(i.sku) ? 'มีใบขอซื้อแล้ว' : 'ต้องสั่งเพิ่ม'}</span></td></tr>
                 ))}
               </tbody>

@@ -14,6 +14,7 @@
     "db:reset": "prisma migrate reset --force",
     "vercel-build": "sh scripts/vercel-build.sh",
     "db:bootstrap": "tsx prisma/bootstrap.ts",
+    "db:bootstrap:store": "tsx prisma/bootstrap-store.ts",
     "backup:photos": "node scripts/backup-photos.mjs",
     "test:e2e": "playwright test",
     "test:e2e:fresh": "prisma migrate reset --force && playwright test"
@@ -28,6 +29,7 @@
     "bcryptjs": "^3.0.3",
     "next": "^16.4.5",
     "nodemailer": "^10.3.1",
+    "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1"
@@ -36,6 +38,7 @@
     "@playwright/test": "~1.56.1",
     "@types/node": "^26.6.3",
     "@types/nodemailer": "^8.0.2",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "prisma": "^6.19.3",

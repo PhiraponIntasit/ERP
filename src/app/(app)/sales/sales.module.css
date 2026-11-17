@@ -1,0 +1,10 @@
+.chart { display: flex; align-items: flex-end; gap: 2px; height: 180px; border-bottom: 1px solid var(--color-divider); padding-top: 8px; }
+.col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; position: relative; }
+.col:hover .bar, .col:focus-visible .bar { background: var(--color-accent-800); }
+.bar { width: 100%; max-width: 28px; margin: 0 auto; background: var(--color-accent); border-radius: 4px 4px 0 0; min-height: 0; }
+.tip { display: none; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 2;
+  background: var(--color-bg); border: 1px solid var(--color-divider); box-shadow: var(--shadow-lg); padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+.col:hover .tip, .col:focus-visible .tip { display: block; }
+.axis { display: flex; gap: 2px; font-size: 11px; color: var(--color-neutral-700); }
+.axis > span { flex: 1 1 0; min-width: 0; text-align: center; overflow: visible; white-space: nowrap; }
+.periods { display: flex; gap: 6px; flex-wrap: wrap; }

@@ -21,9 +21,9 @@ export async function requestPasswordReset(_prev: { msg: string; error: string }
   if (!ident) return { msg: '', error: 'กรุณากรอกชื่อผู้ใช้หรืออีเมล' };
 
   const user = ident.includes('@')
-    ? await db.user.findFirst({ where: { employee: { email: { equals: ident, mode: 'insensitive' } } }, include: { employee: true } })
-    : await db.user.findUnique({ where: { username: ident }, include: { employee: true } });
-  const email = user?.employee?.email?.trim();
+    ? await db.user.findFirst({ where: { email: { equals: ident, mode: 'insensitive' } } })
+    : await db.user.findUnique({ where: { username: ident } });
+  const email = user?.email.trim();
 
   if (!user || !user.active || !email) {
     await audit(db, null, 'auth', 'ขอรีเซ็ตรหัสผ่านไม่สำเร็จ', ident,

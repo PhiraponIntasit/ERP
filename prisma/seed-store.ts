@@ -4,19 +4,24 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 
 type Specs = Prisma.InputJsonObject;
 
-const CATEGORIES: [string, string][] = [
+export const CATEGORIES: [string, string][] = [
   ['cpu', 'ซีพียู (CPU)'], ['mainboard', 'เมนบอร์ด'], ['ram', 'แรม (RAM)'], ['vga', 'การ์ดจอ'],
   ['ssd', 'SSD / สตอเรจ'], ['psu', 'พาวเวอร์ซัพพลาย'], ['case', 'เคส'], ['cooler', 'ชุดระบายความร้อน'],
   ['monitor', 'จอภาพ'], ['peripheral', 'คีย์บอร์ด & เมาส์'], ['cable', 'สายและอะแดปเตอร์'],
   ['notebook-parts', 'อะไหล่โน้ตบุ๊ก'], ['consumable', 'วัสดุสิ้นเปลือง'],
 ];
 
-const BRANDS = [
+export const BRANDS = [
   'AMD', 'Intel', 'ASUS', 'MSI', 'Gigabyte', 'Kingston', 'Corsair', 'G.Skill', 'Sapphire', 'WD', 'Crucial', 'Samsung',
   'Cooler Master', 'Seasonic', 'Lian Li', 'Montech', 'DeepCool', 'Thermalright', 'NZXT', 'LG', 'Dell', 'Logitech', 'HP', 'Lenovo', 'Generic',
 ];
 
-const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** Typical gross margin by category (share of the selling price before VAT) — thin on CPUs and graphics
+ *  cards, wide on cables and accessories, as in Thai IT retail. Purchase cost is ex-VAT. */
+const MARGIN: Record<string, number> = { cpu: .07, vga: .07, mainboard: .09, ram: .13, ssd: .12, psu: .15, case: .18, cooler: .22, monitor: .12, peripheral: .30, cable: .45, 'notebook-parts': .28, consumable: .22 };
+const costOf = (cat: string, price: number) => Math.round(price / 1.07 * (1 - MARGIN[cat]) / 10) * 10;
 
 /** Existing back-office items: category, brand, selling price and specs. */
 const EXISTING: Record<string, [string, string, number, Specs]> = {
@@ -35,43 +40,48 @@ const EXISTING: Record<string, [string, string, number, Specs]> = {
 /** [sku, name, category, brand, unit, qty, min, cost, price, location, specs] */
 type New = [string, string, string, string, string, number, number, number, number, string, Specs];
 const PRODUCTS: New[] = [
-  ['CPU-R5-7600', 'AMD Ryzen 5 7600', 'cpu', 'AMD', 'ชิ้น', 8, 3, 6290, 6990, 'S-01', { socket: 'AM5', cores: 6, threads: 12, tdpW: 65 }],
-  ['CPU-R7-7800X3D', 'AMD Ryzen 7 7800X3D', 'cpu', 'AMD', 'ชิ้น', 5, 2, 13900, 14990, 'S-01', { socket: 'AM5', cores: 8, threads: 16, tdpW: 120 }],
-  ['CPU-I5-14400F', 'Intel Core i5-14400F', 'cpu', 'Intel', 'ชิ้น', 7, 3, 6190, 6790, 'S-01', { socket: 'LGA1700', cores: 10, threads: 16, tdpW: 65 }],
-  ['CPU-I7-14700K', 'Intel Core i7-14700K', 'cpu', 'Intel', 'ชิ้น', 4, 2, 13290, 14290, 'S-01', { socket: 'LGA1700', cores: 20, threads: 28, tdpW: 125 }],
-  ['MB-TUF-B650', 'ASUS TUF GAMING B650-PLUS WIFI', 'mainboard', 'ASUS', 'ชิ้น', 5, 2, 6890, 7590, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 3 }],
-  ['MB-MSI-B650M', 'MSI PRO B650M-A WIFI', 'mainboard', 'MSI', 'ชิ้น', 6, 2, 5290, 5790, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'mATX', m2Slots: 2 }],
-  ['MB-GB-B760M', 'Gigabyte B760M DS3H DDR4', 'mainboard', 'Gigabyte', 'ชิ้น', 6, 2, 3590, 3990, 'S-02', { socket: 'LGA1700', chipset: 'B760', ramType: 'DDR4', formFactor: 'mATX', m2Slots: 2 }],
-  ['MB-ASUS-Z790P', 'ASUS PRIME Z790-P', 'mainboard', 'ASUS', 'ชิ้น', 3, 1, 7290, 7990, 'S-02', { socket: 'LGA1700', chipset: 'Z790', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 3 }],
-  ['RAM-KF-32D5', 'Kingston FURY Beast 32GB (2x16GB) DDR5-5600', 'ram', 'Kingston', 'ชุด', 10, 4, 3390, 3690, 'S-03', { ramType: 'DDR5', capacityGB: 32, modules: 2, speedMHz: 5600 }],
-  ['RAM-GS-32D5', 'G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5-6000', 'ram', 'G.Skill', 'ชุด', 6, 2, 4290, 4690, 'S-03', { ramType: 'DDR5', capacityGB: 32, modules: 2, speedMHz: 6000 }],
-  ['RAM-CR-16D4', 'Corsair Vengeance LPX 16GB (2x8GB) DDR4-3200', 'ram', 'Corsair', 'ชุด', 9, 3, 1290, 1490, 'S-03', { ramType: 'DDR4', capacityGB: 16, modules: 2, speedMHz: 3200 }],
-  ['VGA-GB-4060', 'GIGABYTE GeForce RTX 4060 WINDFORCE OC 8GB', 'vga', 'Gigabyte', 'ชิ้น', 6, 2, 10290, 10990, 'S-04', { chip: 'RTX 4060', vramGB: 8, tdpW: 115, lengthMm: 192 }],
-  ['VGA-ASUS-4070S', 'ASUS DUAL GeForce RTX 4070 SUPER 12GB', 'vga', 'ASUS', 'ชิ้น', 4, 1, 21900, 22990, 'S-04', { chip: 'RTX 4070 SUPER', vramGB: 12, tdpW: 220, lengthMm: 267 }],
-  ['VGA-SAP-7800XT', 'Sapphire PULSE Radeon RX 7800 XT 16GB', 'vga', 'Sapphire', 'ชิ้น', 3, 1, 18900, 19990, 'S-04', { chip: 'RX 7800 XT', vramGB: 16, tdpW: 263, lengthMm: 280 }],
-  ['SSD-WD-SN850X', 'WD Black SN850X 1TB NVMe', 'ssd', 'WD', 'ชิ้น', 10, 3, 2990, 3290, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 1000, formFactor: 'M.2 2280' }],
-  ['SSD-CR-P3P2T', 'Crucial P3 Plus 2TB NVMe', 'ssd', 'Crucial', 'ชิ้น', 7, 2, 4190, 4590, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 2000, formFactor: 'M.2 2280' }],
-  ['PSU-CM-650B', 'Cooler Master MWE 650 Bronze V2', 'psu', 'Cooler Master', 'ชิ้น', 6, 2, 1890, 2090, 'S-05', { wattage: 650, efficiency: '80 PLUS Bronze' }],
-  ['PSU-CO-RM750E', 'Corsair RM750e 750W', 'psu', 'Corsair', 'ชิ้น', 6, 2, 3490, 3890, 'S-05', { wattage: 750, efficiency: '80 PLUS Gold' }],
-  ['PSU-SS-GX850', 'Seasonic FOCUS GX-850', 'psu', 'Seasonic', 'ชิ้น', 3, 1, 4290, 4690, 'S-05', { wattage: 850, efficiency: '80 PLUS Gold' }],
-  ['CASE-LL-216', 'Lian Li LANCOOL 216', 'case', 'Lian Li', 'ชิ้น', 4, 1, 3290, 3590, 'คลังใหญ่', { formFactors: ['ATX', 'mATX', 'ITX'], maxGpuLengthMm: 392 }],
-  ['CASE-MT-903', 'Montech AIR 903 MAX', 'case', 'Montech', 'ชิ้น', 4, 1, 2590, 2890, 'คลังใหญ่', { formFactors: ['E-ATX', 'ATX', 'mATX', 'ITX'], maxGpuLengthMm: 400 }],
-  ['CASE-CM-Q300L', 'Cooler Master MasterBox Q300L', 'case', 'Cooler Master', 'ชิ้น', 5, 2, 1290, 1490, 'คลังใหญ่', { formFactors: ['mATX', 'ITX'], maxGpuLengthMm: 360 }],
-  ['COOL-DC-AK400', 'DeepCool AK400', 'cooler', 'DeepCool', 'ชิ้น', 8, 3, 990, 1190, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 220 }],
-  ['COOL-TR-PA120', 'Thermalright Peerless Assassin 120 SE', 'cooler', 'Thermalright', 'ชิ้น', 6, 2, 1090, 1290, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 250 }],
-  ['COOL-NZ-K240', 'NZXT Kraken 240 AIO', 'cooler', 'NZXT', 'ชิ้น', 3, 1, 3990, 4390, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 250, radiatorMm: 240 }],
-  ['MON-LG-27GR75Q', 'LG UltraGear 27GR75Q 27" QHD 165Hz', 'monitor', 'LG', 'เครื่อง', 4, 1, 7990, 8690, 'คลังใหญ่', { sizeInch: 27, resolution: '2560x1440', refreshHz: 165 }],
+  ['CPU-R5-7600', 'AMD Ryzen 5 7600', 'cpu', 'AMD', 'ชิ้น', 8, 3, 6080, 6990, 'S-01', { socket: 'AM5', cores: 6, threads: 12, tdpW: 65 }],
+  ['CPU-R7-7800X3D', 'AMD Ryzen 7 7800X3D', 'cpu', 'AMD', 'ชิ้น', 5, 2, 13030, 14990, 'S-01', { socket: 'AM5', cores: 8, threads: 16, tdpW: 120 }],
+  ['CPU-I5-14400F', 'Intel Core i5-14400F', 'cpu', 'Intel', 'ชิ้น', 7, 3, 5900, 6790, 'S-01', { socket: 'LGA1700', cores: 10, threads: 16, tdpW: 65 }],
+  ['CPU-I7-14700K', 'Intel Core i7-14700K', 'cpu', 'Intel', 'ชิ้น', 4, 2, 12420, 14290, 'S-01', { socket: 'LGA1700', cores: 20, threads: 28, tdpW: 125 }],
+  ['MB-TUF-B650', 'ASUS TUF GAMING B650-PLUS WIFI', 'mainboard', 'ASUS', 'ชิ้น', 5, 2, 6460, 7590, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 3 }],
+  ['MB-MSI-B650M', 'MSI PRO B650M-A WIFI', 'mainboard', 'MSI', 'ชิ้น', 6, 2, 4920, 5790, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'mATX', m2Slots: 2 }],
+  ['MB-GB-B760M', 'Gigabyte B760M DS3H DDR4', 'mainboard', 'Gigabyte', 'ชิ้น', 6, 2, 3390, 3990, 'S-02', { socket: 'LGA1700', chipset: 'B760', ramType: 'DDR4', formFactor: 'mATX', m2Slots: 2 }],
+  ['MB-ASUS-Z790P', 'ASUS PRIME Z790-P', 'mainboard', 'ASUS', 'ชิ้น', 3, 1, 6800, 7990, 'S-02', { socket: 'LGA1700', chipset: 'Z790', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 3 }],
+  ['RAM-KF-32D5', 'Kingston FURY Beast 32GB (2x16GB) DDR5-5600', 'ram', 'Kingston', 'ชุด', 10, 4, 3000, 3690, 'S-03', { ramType: 'DDR5', capacityGB: 32, modules: 2, speedMHz: 5600 }],
+  ['RAM-GS-32D5', 'G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5-6000', 'ram', 'G.Skill', 'ชุด', 6, 2, 3810, 4690, 'S-03', { ramType: 'DDR5', capacityGB: 32, modules: 2, speedMHz: 6000 }],
+  ['RAM-CR-16D4', 'Corsair Vengeance LPX 16GB (2x8GB) DDR4-3200', 'ram', 'Corsair', 'ชุด', 9, 3, 1210, 1490, 'S-03', { ramType: 'DDR4', capacityGB: 16, modules: 2, speedMHz: 3200 }],
+  ['VGA-GB-4060', 'GIGABYTE GeForce RTX 4060 WINDFORCE OC 8GB', 'vga', 'Gigabyte', 'ชิ้น', 6, 2, 9550, 10990, 'S-04', { chip: 'RTX 4060', vramGB: 8, tdpW: 115, lengthMm: 192 }],
+  ['VGA-ASUS-4070S', 'ASUS DUAL GeForce RTX 4070 SUPER 12GB', 'vga', 'ASUS', 'ชิ้น', 4, 1, 19980, 22990, 'S-04', { chip: 'RTX 4070 SUPER', vramGB: 12, tdpW: 220, lengthMm: 267 }],
+  ['VGA-SAP-7800XT', 'Sapphire PULSE Radeon RX 7800 XT 16GB', 'vga', 'Sapphire', 'ชิ้น', 3, 1, 17370, 19990, 'S-04', { chip: 'RX 7800 XT', vramGB: 16, tdpW: 263, lengthMm: 280 }],
+  ['SSD-WD-SN850X', 'WD Black SN850X 1TB NVMe', 'ssd', 'WD', 'ชิ้น', 10, 3, 2710, 3290, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 1000, formFactor: 'M.2 2280' }],
+  ['SSD-CR-P3P2T', 'Crucial P3 Plus 2TB NVMe', 'ssd', 'Crucial', 'ชิ้น', 7, 2, 3770, 4590, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 2000, formFactor: 'M.2 2280' }],
+  ['PSU-CM-650B', 'Cooler Master MWE 650 Bronze V2', 'psu', 'Cooler Master', 'ชิ้น', 6, 2, 1660, 2090, 'S-05', { wattage: 650, efficiency: '80 PLUS Bronze' }],
+  ['PSU-CO-RM750E', 'Corsair RM750e 750W', 'psu', 'Corsair', 'ชิ้น', 6, 2, 3090, 3890, 'S-05', { wattage: 750, efficiency: '80 PLUS Gold' }],
+  ['PSU-SS-GX850', 'Seasonic FOCUS GX-850', 'psu', 'Seasonic', 'ชิ้น', 3, 1, 3730, 4690, 'S-05', { wattage: 850, efficiency: '80 PLUS Gold' }],
+  ['CASE-LL-216', 'Lian Li LANCOOL 216', 'case', 'Lian Li', 'ชิ้น', 4, 1, 2750, 3590, 'คลังใหญ่', { formFactors: ['ATX', 'mATX', 'ITX'], maxGpuLengthMm: 392 }],
+  ['CASE-MT-903', 'Montech AIR 903 MAX', 'case', 'Montech', 'ชิ้น', 4, 1, 2210, 2890, 'คลังใหญ่', { formFactors: ['E-ATX', 'ATX', 'mATX', 'ITX'], maxGpuLengthMm: 400 }],
+  ['CASE-CM-Q300L', 'Cooler Master MasterBox Q300L', 'case', 'Cooler Master', 'ชิ้น', 5, 2, 1140, 1490, 'คลังใหญ่', { formFactors: ['mATX', 'ITX'], maxGpuLengthMm: 360 }],
+  ['COOL-DC-AK400', 'DeepCool AK400', 'cooler', 'DeepCool', 'ชิ้น', 8, 3, 870, 1190, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 220 }],
+  ['COOL-TR-PA120', 'Thermalright Peerless Assassin 120 SE', 'cooler', 'Thermalright', 'ชิ้น', 6, 2, 940, 1290, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 250 }],
+  ['COOL-NZ-K240', 'NZXT Kraken 240 AIO', 'cooler', 'NZXT', 'ชิ้น', 3, 1, 3200, 4390, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1700'], maxTdpW: 250, radiatorMm: 240 }],
+  ['MON-LG-27GR75Q', 'LG UltraGear 27GR75Q 27" QHD 165Hz', 'monitor', 'LG', 'เครื่อง', 4, 1, 7150, 8690, 'คลังใหญ่', { sizeInch: 27, resolution: '2560x1440', refreshHz: 165 }],
 ];
 
-export const SUPPLIERS = ['บจก. ไอทีซัพพลาย', 'บจก. คอมพาร์ท ดิสทริบิวชั่น', 'หจก. สยามไอทีเทรด'];
+/** [name, tax ID, phone, email] — fictitious distributors for the demo */
+export const SUPPLIERS: [string, string, string, string][] = [
+  ['บจก. ไอทีซัพพลาย', '0105551234567', '02-111-2233', 'sales@itsupply.example'],
+  ['บจก. คอมพาร์ท ดิสทริบิวชั่น', '0105559876543', '02-444-5566', 'order@compart.example'],
+  ['หจก. สยามไอทีเทรด', '0103557654321', '02-777-8899', 'po@siamittrade.example'],
+];
 
 export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
   await db.category.createMany({ data: CATEGORIES.map(([slug, name], sort) => ({ id: 'cat-' + slug, slug, name, sort })) });
   await db.brand.createMany({ data: BRANDS.map(name => ({ id: 'brand-' + slugOf(name), slug: slugOf(name), name })) });
-  await db.supplier.createMany({ data: SUPPLIERS.map((name, i) => ({ id: `sup-${i + 1}`, name })) });
+  await db.supplier.createMany({ data: SUPPLIERS.map(([name, taxId, phone, email], i) => ({ id: `sup-${i + 1}`, name, taxId, phone, email })) });
 
   for (const [sku, [cat, brand, price, specs]] of Object.entries(EXISTING))
-    await db.inventoryItem.update({ where: { sku }, data: { price, categoryId: 'cat-' + cat, brandId: 'brand-' + slugOf(brand), specs, slug: slugOf(sku), active: true } });
+    await db.inventoryItem.update({ where: { sku }, data: { price, cost: costOf(cat, price), categoryId: 'cat-' + cat, brandId: 'brand-' + slugOf(brand), specs, slug: slugOf(sku), active: true } });
 
   await db.inventoryItem.createMany({
     data: PRODUCTS.map(([sku, name, cat, brand, unit, qty, min, cost, price, loc, specs]) => ({
@@ -80,4 +90,51 @@ export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
     })),
   });
   await db.stockMove.createMany({ data: PRODUCTS.map(([sku, , , , , qty]) => ({ t: stockedAt, sku, type: 'in', qty, ref: 'ยอดตั้งต้น', by })) });
+
+  // CPUs, graphics cards and mainboards carry a manufacturer warranty per unit, so they are sold by serial
+  const tracked = PRODUCTS.filter(p => SERIAL_CATS.includes(p[2]));
+  await db.inventoryItem.updateMany({ where: { sku: { in: tracked.map(p => p[0]) } }, data: { serialTracked: true } });
+  await db.serialNumber.createMany({
+    data: tracked.flatMap(([sku, , , , , qty]) => Array.from({ length: qty }, (_, k) => ({ serial: `${sku}-SN${String(k + 1).padStart(4, '0')}`, sku, receivedRef: 'ยอดตั้งต้น' }))),
+  });
+}
+
+const SERIAL_CATS = ['cpu', 'vga', 'mainboard'];
+
+/** Demo coupons and about two months of finished orders, so the sales report has something to show.
+ *  Past orders are already delivered, so they don't touch today's stock; serial-tracked items are left out. */
+export async function seedSales(db: PrismaClient, passwordHash: string) {
+  const day = 864e5, now = Date.now();
+  await db.coupon.createMany({ data: [
+    { code: 'WELCOME10', kind: 'percent', value: 10, maxDiscount: 500, minSpend: 0, startsAt: new Date(now - 90 * day), endsAt: new Date(now + 275 * day), oncePerCustomer: true, note: 'ลูกค้าใหม่ ลด 10%' },
+    { code: 'SAVE300', kind: 'fixed', value: 300, minSpend: 3000, startsAt: new Date(now - 60 * day), endsAt: new Date(now + 30 * day), usageLimit: 100, note: 'ซื้อครบ 3,000 ลด 300' },
+    { code: 'EARLYBIRD', kind: 'percent', value: 15, maxDiscount: 1000, minSpend: 5000, startsAt: new Date(now - 120 * day), endsAt: new Date(now - 60 * day), note: 'โปรเปิดร้าน (หมดอายุแล้ว)' },
+  ] });
+
+  const people = ['สมชาย ใจกว้าง', 'ศิริพร แสงทอง', 'ณัฐพล ศรีสุข', 'กมลชนก บุญมา', 'ธนกร วงศ์ดี', 'พิมพ์ชนก ทองคำ'];
+  const customers = await Promise.all(people.map((name, i) => db.customer.create({ data: { id: `cus-${i + 1}`, email: `buyer${i + 1}@example.com`, passwordHash, name, phone: `08000000${String(i).padStart(2, '0')}` } })));
+  const items = await db.inventoryItem.findMany({ where: { active: true, serialTracked: false, price: { gt: 0 } }, orderBy: { sku: 'asc' } });
+  let seed = 7;
+  const rnd = () => (seed = (seed * 48271) % 2147483647) / 2147483647; // deterministic, so every fresh database looks the same
+  const year = new Date().getFullYear();
+  for (let k = 0; k < 48; k++) {
+    const c = customers[Math.floor(rnd() * customers.length)];
+    const picks = [...new Set(Array.from({ length: 1 + Math.floor(rnd() * 3) }, () => items[Math.floor(rnd() * items.length)]))];
+    const lines = picks.map(i => ({ sku: i.sku, name: i.name, price: Number(i.price), cost: Number(i.cost), qty: 1 + Math.floor(rnd() * 2) }));
+    const subtotal = Math.round(lines.reduce((a, l) => a + l.price * l.qty, 0) * 100) / 100;
+    const coupon = subtotal >= 3000 && rnd() < 0.25 ? 'SAVE300' : null, discount = coupon ? 300 : 0;
+    const metro = rnd() < 0.6, shippingFee = subtotal - discount >= 2000 || metro ? 0 : 150;
+    const paidAt = new Date(now - (1 + Math.floor(rnd() * 58)) * day - Math.floor(rnd() * 10) * 3600e3);
+    const n = (await db.counter.update({ where: { key: 'ord' }, data: { value: { increment: 1 } } })).value - 1;
+    const id = `ORD-${year}-${String(n).padStart(6, '0')}`;
+    await db.order.create({ data: {
+      id, customerId: c.id, status: 'completed', subtotal, discount, shippingFee, total: subtotal - discount + shippingFee, couponCode: coupon,
+      shipName: c.name, shipPhone: c.phone, shipAddress: metro ? '12 ถนนสุขุมวิท ต.คลองเตย อ.คลองเตย จ.กรุงเทพมหานคร 10110' : '5 ถนนห้วยแก้ว ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200',
+      createdAt: new Date(paidAt.getTime() - 5 * 60e3), expiresAt: new Date(paidAt.getTime() + 10 * 60e3), paidAt,
+      shippedAt: new Date(paidAt.getTime() + day), completedAt: new Date(paidAt.getTime() + 3 * day), carrier: 'Kerry Express', trackingNo: `KEX${String(100000 + n)}`,
+      lines: { create: lines },
+      payments: { create: { provider: 'demo_promptpay', amount: subtotal - discount + shippingFee, status: 'successful', providerRef: `demo_seed_${n}`, expiresAt: new Date(paidAt.getTime() + 10 * 60e3), paidAt } },
+    } });
+  }
+  await db.coupon.update({ where: { code: 'SAVE300' }, data: { used: await db.order.count({ where: { couponCode: 'SAVE300' } }) } });
 }
