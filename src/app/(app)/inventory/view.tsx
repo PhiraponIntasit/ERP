@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { AddItemDialog, PRDialog, ReceiveDialog, type InvItem } from '@/components/procurement';
+import { AddItemDialog, PRDialog, ReceiveDialog, type InvItem, type SupplierOption } from '@/components/procurement';
 import { AlertIcon } from '@/components/icons';
 import { Pager } from '@/components/pager';
 import type { Page } from '@/lib/paging';
@@ -8,10 +8,11 @@ import { bahtS } from '@/lib/domain';
 
 type Move = { id: string; tText: string; name: string; type: string; qty: number; ref: string; by: string };
 
-export function InventoryView({ items, moves, movesPage, manage, factor }: { items: InvItem[]; moves: Move[]; movesPage: Page; manage: boolean; factor: number }) {
+export function InventoryView({ items, suppliers, moves, movesPage, manage, factor }: { items: InvItem[]; suppliers: SupplierOption[]; moves: Move[]; movesPage: Page; manage: boolean; factor: number }) {
   const [q, setQ] = useState('');
   const [dlg, setDlg] = useState<null | { type: 'receive'; sku?: string } | { type: 'add' } | { type: 'pr' }>(null);
-  const lowNoPR = items.filter(i => i.qty <= i.min && !i.inPR);
+  const free = (i: InvItem) => i.qty - i.reserved;   // units not held for customers' unpaid orders
+  const lowNoPR = items.filter(i => free(i) <= i.min && !i.inPR);
   const stockVal = items.reduce((a, i) => a + i.qty * i.cost, 0);
   const s = q.trim().toLowerCase();
   const rows = items.filter(i => !s || (i.sku + i.name + i.cat).toLowerCase().includes(s));
@@ -24,7 +25,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
           <AlertIcon />
           <div style={{ flex: 1 }}>
             <div className="alert-title">สินค้า {lowNoPR.length} รายการ ต่ำกว่าจุดสั่งซื้อและยังไม่มีใบขอซื้อ</div>
-            <div style={{ fontSize: 13, color: 'var(--color-neutral-700)' }}>{lowNoPR.map(i => `${i.name} (เหลือ ${i.qty}/${i.min})`).join(' · ')}</div>
+            <div style={{ fontSize: 13, color: 'var(--color-neutral-700)' }}>{lowNoPR.map(i => `${i.name} (พร้อมใช้ ${free(i)}/${i.min})`).join(' · ')}</div>
           </div>
           {manage && <button className="btn btn-primary" onClick={() => setDlg({ type: 'pr' })}>สร้างใบขอซื้อ</button>}
         </div>
@@ -44,7 +45,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
           <thead><tr><th>SKU</th><th>สินค้า</th><th>หมวด</th><th>ที่เก็บ</th><th style={{ width: 200 }}>คงเหลือ</th><th className="r">จุดสั่งซื้อ</th><th className="r">ราคาทุน/หน่วย</th><th>สถานะ</th><th></th></tr></thead>
           <tbody>
             {rows.map(i => {
-              const low = i.qty <= i.min, out = i.qty === 0;
+              const low = free(i) <= i.min, out = free(i) <= 0;
               return (
                 <tr key={i.sku}>
                   <td className="tnum" style={{ fontSize: 12 }}>{i.sku}</td>
@@ -53,8 +54,8 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
                   <td style={{ fontSize: 13 }}>{i.loc}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className="tnum" style={{ width: 56, color: low ? 'var(--color-accent-800)' : 'var(--color-text)' }}>{i.qty} {i.unit}</span>
-                      <div className="qbar"><div style={{ width: Math.min(100, i.qty / Math.max(1, i.min * factor) * 100) + '%', background: low ? 'var(--color-accent-700)' : 'var(--color-neutral-600)' }} /></div>
+                      <span className="tnum" style={{ width: 56, color: low ? 'var(--color-accent-800)' : 'var(--color-text)' }}>{i.qty} {i.unit}{i.reserved > 0 && <span style={{ display: 'block', fontSize: 11, color: 'var(--color-neutral-700)' }}>จอง {i.reserved}</span>}</span>
+                      <div className="qbar"><div style={{ width: Math.min(100, free(i) / Math.max(1, i.min * factor) * 100) + '%', background: low ? 'var(--color-accent-700)' : 'var(--color-neutral-600)' }} /></div>
                     </div>
                   </td>
                   <td className="r tnum">{i.min}</td>
@@ -91,7 +92,7 @@ export function InventoryView({ items, moves, movesPage, manage, factor }: { ite
       </div>
       {dlg?.type === 'receive' && <ReceiveDialog items={items} sku={dlg.sku} onClose={close} />}
       {dlg?.type === 'add' && <AddItemDialog onClose={close} />}
-      {dlg?.type === 'pr' && <PRDialog items={items} factor={factor} onClose={close} />}
+      {dlg?.type === 'pr' && <PRDialog items={items} suppliers={suppliers} factor={factor} onClose={close} />}
     </div>
   );
 }

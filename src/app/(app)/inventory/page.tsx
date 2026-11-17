@@ -11,7 +11,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const me = await requirePage('inventory');
   const [{ items }, total, sp] = await Promise.all([invItems(), db.stockMove.count(), searchParams]);
   const page = pageOf(sp.page, total, MOVES_PER_PAGE);
+  const suppliers = await db.supplier.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } });
   const moves = await db.stockMove.findMany({ orderBy: [{ t: 'desc' }, { id: 'desc' }], skip: page.skip, take: page.size, include: { item: { select: { name: true } } } });
-  return <InventoryView items={items} manage={can(me, 'purchase')} factor={config.reorderFactor()} movesPage={page}
+  return <InventoryView items={items} suppliers={suppliers} manage={can(me, 'purchase')} factor={config.reorderFactor()} movesPage={page}
     moves={moves.map(m => ({ id: m.id, tText: fmtDT(m.t), name: m.item.name, type: m.type, qty: m.qty, ref: m.ref, by: m.by }))} />;
 }

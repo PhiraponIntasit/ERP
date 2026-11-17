@@ -17,7 +17,8 @@ export default async function PurchasePage({ searchParams }: { searchParams: Pro
     db.purchaseRequest.findMany({ where: { ...mine, status: 'approved' }, include: prInclude, orderBy: [{ decided: 'asc' }, { id: 'asc' }] }),
     db.purchaseRequest.count({ where: rest }), invItems(), searchParams,
   ]);
+  const suppliers = await db.supplier.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } });
   const page = pageOf(sp.page, total, PER_PAGE);
   const prs = await db.purchaseRequest.findMany({ where: rest, include: prInclude, orderBy: [{ date: 'desc' }, { id: 'desc' }], skip: page.skip, take: page.size });
-  return <PurchaseView toReceive={toReceive.map(p => prView(p, me))} prs={prs.map(p => prView(p, me))} page={page} items={items} factor={config.reorderFactor()} />;
+  return <PurchaseView toReceive={toReceive.map(p => prView(p, me))} prs={prs.map(p => prView(p, me))} page={page} items={items} suppliers={suppliers} factor={config.reorderFactor()} />;
 }

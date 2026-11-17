@@ -105,10 +105,10 @@ export default async function DashboardPage() {
           <div className="card-title">สินค้าต่ำกว่าจุดสั่งซื้อ</div>
           <div className="scroll-x">
             <table className="table">
-              <thead><tr><th>สินค้า</th><th className="r">คงเหลือ</th><th className="r">จุดสั่งซื้อ</th><th>สถานะ</th></tr></thead>
+              <thead><tr><th>สินค้า</th><th className="r">พร้อมใช้</th><th className="r">จุดสั่งซื้อ</th><th>สถานะ</th></tr></thead>
               <tbody>
                 {lowAll.map(i => (
-                  <tr key={i.sku}><td>{i.name}</td><td className="r tnum" style={{ color: 'var(--color-accent-800)' }}>{i.qty}</td><td className="r tnum">{i.min}</td>
+                  <tr key={i.sku}><td>{i.name}</td><td className="r tnum" style={{ color: 'var(--color-accent-800)' }}>{i.qty - i.reserved}</td><td className="r tnum">{i.min}</td>
                     <td><span className={`tag ${open.has(i.sku) ? 'tag-neutral' : 'tag-outline'}`}>{open.has(i.sku) ? 'มีใบขอซื้อแล้ว' : 'ต้องสั่งเพิ่ม'}</span></td></tr>
                 ))}
               </tbody>

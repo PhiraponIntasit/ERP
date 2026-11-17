@@ -4,6 +4,7 @@ import { db } from './db';
 import { can } from './auth';
 import { STRANDED } from './assignable';
 import { canDecide, OPEN, slaOf } from '@/lib/domain';
+import { available } from './stock-reserve';
 
 /** SKUs that already have a PR in flight (pending, pending_exec or approved) — never suggest re-ordering these. */
 export async function openPrSkus() {
@@ -13,7 +14,8 @@ export async function openPrSkus() {
 
 export async function lowStock() {
   const [items, open] = await Promise.all([db.inventoryItem.findMany({ orderBy: { sku: 'asc' } }), openPrSkus()]);
-  const lowAll = items.filter(i => i.qty <= i.min);
+  // Units held for unpaid orders are as good as gone, so they don't count toward the reorder point
+  const lowAll = items.filter(i => available(i) <= i.min);
   return { items, open, lowAll, lowNoPR: lowAll.filter(i => !open.has(i.sku)) };
 }
 

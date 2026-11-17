@@ -33,7 +33,7 @@ export function ticketView(t: T) {
 export type TicketView = ReturnType<typeof ticketView>;
 
 export const prInclude = {
-  lines: { orderBy: { ord: 'asc' } }, requester: { select: { name: true } }, approver1: { select: { name: true } }, approver: { select: { name: true } },
+  lines: { orderBy: { ord: 'asc' } }, requester: { select: { name: true } }, supplier: { select: { taxId: true, phone: true, email: true } }, approver1: { select: { name: true } }, approver: { select: { name: true } },
 } satisfies Prisma.PurchaseRequestInclude;
 type P = Prisma.PurchaseRequestGetPayload<{ include: typeof prInclude }>;
 
@@ -43,7 +43,7 @@ export function prView(p: P, me: { id: string; role: string }, stock?: Map<strin
   const c = pending ? canDecide(p, me) : { ok: false };
   const limit = config.approvalLimit();
   return {
-    id: p.id, status: p.status, vendor: p.vendor, noteText: p.note || '—', reason: p.reason,
+    id: p.id, status: p.status, vendor: p.vendor, vendorTax: p.supplier?.taxId ?? '', vendorContact: [p.supplier?.phone, p.supplier?.email].filter(Boolean).join(' · '), noteText: p.note || '—', reason: p.reason,
     dateText: fmtD(p.date), requesterName: p.requester.name, requesterId: p.requesterId,
     approverName: p.approver ? (p.approver1 && p.approver1Id !== p.approverId ? p.approver1.name + ' → ' : '') + p.approver.name : p.approver1 ? p.approver1.name + ' → …' : '—',
     approver1Name: p.approver1?.name ?? '', finalApprover: p.approver?.name ?? '—',
