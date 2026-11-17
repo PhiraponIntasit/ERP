@@ -11,5 +11,5 @@ export function proxy(request: NextRequest) {
 
 // The app's pages only (see MOD_PATH) — not static files, API routes or the login pages.
 export const config = {
-  matcher: ['/dashboard', '/tickets/:path*', '/dispatch', '/work', '/inventory', '/purchase', '/approvals', '/employees', '/assets', '/users', '/audit'],
+  matcher: ['/dashboard', '/tickets/:path*', '/dispatch', '/work', '/inventory', '/products/:path*', '/purchase', '/approvals', '/employees', '/assets', '/users', '/audit'],
 };
