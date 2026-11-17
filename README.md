@@ -14,6 +14,8 @@ npm run db:seed                 # sample data — demo accounts use password 123
 npm run dev                     # http://localhost:3000
 ```
 
+`npm run dev` regenerates the Prisma client first and warns if your database is missing migrations (`scripts/predev.mjs`). After pulling changes that touch `prisma/` or `package.json`, run `npm install` and `npx prisma migrate deploy`.
+
 Production on Vercel: see [docs/DEPLOY.md](docs/DEPLOY.md). Self-hosted: `npm run build && npm start`. Serve over HTTPS (session cookies are `Secure` in production; see `COOKIE_SECURE`).
 
 Demo accounts: `admin`, `manager`, `executive`, `itmanager`, `somchai`, `pakorn` (IT Support), `wiphada` (Store Keeper), `surachai`, `natthida` (Employee). **Set `SHOW_DEMO_ACCOUNTS=false` in production** and change the seeded passwords (or don't seed).
