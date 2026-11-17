@@ -5,7 +5,7 @@ import { ToastProvider } from '@/components/toast';
 import './classical.css';
 import './globals.css';
 
-export const metadata: Metadata = { title: 'IT Products Store Management System', description: 'Inventory · Procurement · Helpdesk' };
+export const metadata: Metadata = { title: 'COREPICK · IT Products Store Management System', description: 'Inventory · Procurement · Helpdesk' };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const t = (await cookies()).get('erp_theme')?.value;
