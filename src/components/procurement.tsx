@@ -77,7 +77,7 @@ export function PRDialog({ items, suppliers, factor, onClose }: { items: InvItem
   const total = sorted.reduce((a, i) => a + (parseInt(lines[i.sku] ?? '', 10) || 0) * i.cost, 0);
   return (
     <Dialog title="สร้างใบขอซื้อ (Purchase Request)" className="w800" onClose={onClose}>
-      <div className="dialog-body" style={{ textAlign: 'justify' }}>ระบุจำนวนที่ต้องการสั่ง รายการที่ต่ำกว่าจุดสั่งซื้อเติมจำนวนแนะนำไว้แล้ว ใบขอซื้อจะส่งให้ Manager อนุมัติก่อนออกใบสั่งซื้อ</div>
+      <div className="dialog-body" style={{ textAlign: 'left' }}>ระบุจำนวนที่ต้องการสั่ง รายการที่ต่ำกว่าจุดสั่งซื้อเติมจำนวนแนะนำไว้แล้ว ใบขอซื้อจะส่งให้ Manager อนุมัติก่อนออกใบสั่งซื้อ</div>
       <div className="grid2">
         <div className="field"><label htmlFor="pr-s">ผู้ขาย (Supplier) · <Link href="/purchase/suppliers">จัดการรายชื่อ</Link></label>
           <select id="pr-s" className="input" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
@@ -132,17 +132,17 @@ export function PODialog({ po, onClose }: { po: PRView; onClose: () => void }) {
     <Dialog bare onClose={onClose}>
       <div className="po-wrap">
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" style={{ background: 'var(--color-bg)' }} onClick={onClose}>ปิด</button>
-          <button className="btn btn-primary" style={{ background: 'var(--color-bg)' }} onClick={print}><PrinterIcon /> พิมพ์ / บันทึกเป็น PDF</button>
+          <button className="btn btn-secondary" onClick={onClose}>ปิด</button>
+          <button className="btn btn-primary" onClick={print}><PrinterIcon /> พิมพ์ / บันทึกเป็น PDF</button>
         </div>
         <div id="po-print">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, borderBottom: '1px solid var(--color-text)', paddingBottom: 16 }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 28, fontWeight: 500, lineHeight: 1 }}>{COMPANY.name}</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>{COMPANY.name}</div>
               <div style={{ fontSize: 12, marginTop: 6, color: 'var(--color-neutral-800)' }}>{COMPANY.addr}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 500, lineHeight: 1 }}>ใบสั่งซื้อ</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>ใบสั่งซื้อ</div>
               <div className="kicker" style={{ marginTop: 4 }}>Purchase Order</div>
             </div>
           </div>

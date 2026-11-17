@@ -44,7 +44,7 @@ export function UsersView({ users, meId }: { users: U[]; meId: string }) {
           <thead><tr><th>เมนู / ฟังก์ชัน</th>{ROLES.map(([, l]) => <th key={l} style={{ textAlign: 'center' }}>{l}</th>)}</tr></thead>
           <tbody>
             {ALL.map(m => (
-              <tr key={m}><td>{MOD_LABEL[m]}</td>{ROLES.map(([r]) => { const on = ROLE_PERMS[r].includes(m); return <td key={r} style={{ textAlign: 'center', color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-400)' }} aria-label={on ? 'มีสิทธิ์' : 'ไม่มีสิทธิ์'}>{on ? '●' : '—'}</td>; })}</tr>
+              <tr key={m}><td>{MOD_LABEL[m]}</td>{ROLES.map(([r]) => { const on = ROLE_PERMS[r].includes(m); return <td key={r} style={{ textAlign: 'center', color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-600)' }} aria-label={on ? 'มีสิทธิ์' : 'ไม่มีสิทธิ์'}>{on ? '●' : '—'}</td>; })}</tr>
             ))}
           </tbody>
         </table>
