@@ -7,7 +7,7 @@ import { Dialog, Err } from './dialog';
 import { PrinterIcon } from './icons';
 import { baht, bahtS } from '@/lib/domain';
 
-export type InvItem = { sku: string; name: string; cat: string; unit: string; qty: number; min: number; price: number; loc: string; inPR: boolean };
+export type InvItem = { sku: string; name: string; cat: string; unit: string; qty: number; min: number; cost: number; loc: string; inPR: boolean };
 
 export function ReceiveDialog({ items, sku: sku0 = '', onClose }: { items: InvItem[]; sku?: string; onClose: () => void }) {
   const [sku, setSku] = useState(sku0), [qty, setQty] = useState(''), [note, setNote] = useState('');
@@ -32,7 +32,7 @@ export function ReceiveDialog({ items, sku: sku0 = '', onClose }: { items: InvIt
 }
 
 export function AddItemDialog({ onClose }: { onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>({ unit: 'ชิ้น', qty: '0', min: '2', price: '' });
+  const [f, setF] = useState<Record<string, string>>({ unit: 'ชิ้น', qty: '0', min: '2', cost: '' });
   const { run, pending, error } = useAction();
   const inp = (k: string, label: string, type = 'text', extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div className={`field${k === 'name' ? ' full' : ''}`}><label htmlFor={'ai-' + k}>{label}</label><input id={'ai-' + k} className="input" type={type} value={f[k] ?? ''} onChange={e => setF(x => ({ ...x, [k]: e.target.value }))} {...extra} /></div>
@@ -47,7 +47,7 @@ export function AddItemDialog({ onClose }: { onClose: () => void }) {
         {inp('loc', 'ที่เก็บ')}
         {inp('qty', 'จำนวนตั้งต้น', 'number', { min: 0 })}
         {inp('min', 'จุดสั่งซื้อ (ขั้นต่ำ)', 'number', { min: 0 })}
-        {inp('price', 'ราคา/หน่วย (บาท)', 'number', { min: 0, step: '0.01' })}
+        {inp('cost', 'ราคาทุน/หน่วย (บาท)', 'number', { min: 0, step: '0.01' })}
       </div>
       <Err msg={error} />
       <div className="dialog-actions">
@@ -64,7 +64,7 @@ export function PRDialog({ items, factor, onClose }: { items: InvItem[]; factor:
   const [vendor, setVendor] = useState(''), [note, setNote] = useState('เติมสต็อกสินค้าต่ำกว่าจุดสั่งซื้อ');
   const { run, pending, error } = useAction();
   const sorted = [...items].sort((a, b) => Number(b.qty <= b.min) - Number(a.qty <= a.min));
-  const total = sorted.reduce((a, i) => a + (parseInt(lines[i.sku] ?? '', 10) || 0) * i.price, 0);
+  const total = sorted.reduce((a, i) => a + (parseInt(lines[i.sku] ?? '', 10) || 0) * i.cost, 0);
   return (
     <Dialog title="สร้างใบขอซื้อ (Purchase Request)" className="w800" onClose={onClose}>
       <div className="dialog-body" style={{ textAlign: 'justify' }}>ระบุจำนวนที่ต้องการสั่ง รายการที่ต่ำกว่าจุดสั่งซื้อเติมจำนวนแนะนำไว้แล้ว ใบขอซื้อจะส่งให้ Manager อนุมัติก่อนออกใบสั่งซื้อ</div>
@@ -74,7 +74,7 @@ export function PRDialog({ items, factor, onClose }: { items: InvItem[]; factor:
       </div>
       <div className="scroll-x">
         <table className="table">
-          <thead><tr><th>สินค้า</th><th className="r">คงเหลือ / จุดสั่งซื้อ</th><th className="r">ราคา</th><th style={{ width: 110 }}>จำนวนสั่ง</th><th className="r">รวม</th></tr></thead>
+          <thead><tr><th>สินค้า</th><th className="r">คงเหลือ / จุดสั่งซื้อ</th><th className="r">ราคาทุน</th><th style={{ width: 110 }}>จำนวนสั่ง</th><th className="r">รวม</th></tr></thead>
           <tbody>
             {sorted.map(i => {
               const n = parseInt(lines[i.sku] ?? '', 10) || 0;
@@ -85,9 +85,9 @@ export function PRDialog({ items, factor, onClose }: { items: InvItem[]; factor:
                     {i.inPR && <span className="tag tag-neutral" style={{ marginLeft: 6, padding: '1px 6px' }}>มีใบขอซื้อค้าง</span>}
                   </td>
                   <td className="r tnum">{i.qty} / {i.min}</td>
-                  <td className="r tnum">{bahtS(i.price)}</td>
+                  <td className="r tnum">{bahtS(i.cost)}</td>
                   <td><input className="input" type="number" min={0} aria-label={`จำนวนสั่ง ${i.name}`} style={{ minHeight: 30, padding: '3px 8px' }} value={lines[i.sku] ?? ''} onChange={e => setLines(l => ({ ...l, [i.sku]: e.target.value }))} /></td>
-                  <td className="r tnum">{n ? baht(n * i.price) : '—'}</td>
+                  <td className="r tnum">{n ? baht(n * i.cost) : '—'}</td>
                 </tr>
               );
             })}

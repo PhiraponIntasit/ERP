@@ -3,6 +3,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { ROLE_PERMS, type Role } from '../src/lib/domain';
+import { seedStore } from './seed-store';
 
 const db = new PrismaClient();
 const TZ = process.env.DISPLAY_TZ || 'Asia/Bangkok';
@@ -71,7 +72,8 @@ async function main() {
     ['HDMI-2M', 'HDMI 2.1 Cable 2m', 'สายเชื่อมต่อ', 'เส้น', 20, 6, 250, 'C-02'],
     ['MON-U27', 'Dell UltraSharp 27" 4K', 'จอภาพ', 'เครื่อง', 3, 2, 12900, 'คลังใหญ่'],
   ];
-  await db.inventoryItem.createMany({ data: inv.map(([sku, name, cat, unit, qty, min, price, loc]) => ({ sku, name, cat, unit, qty, min, price, loc })) });
+  await db.inventoryItem.createMany({ data: inv.map(([sku, name, cat, unit, qty, min, price, loc]) => ({ sku, name, cat, unit, qty, min, cost: price, price, loc })) });
+  await seedStore(db, daysAgo(30), 'วิภาดา รุ่งเรือง');
 
   const h = (t: Date, text: string, by: string) => ({ t, text, by });
   const tickets = [
@@ -122,7 +124,7 @@ async function main() {
     A(daysAgo(0, 9, 12), 'u6', 'วิภาดา รุ่งเรือง', 'Store Keeper', 'ticket', 'เปิดคำร้อง', 'TCK-1049', 'Wi-Fi ชั้น 4 หลุดทั้งฟลอร์ · วิกฤต'),
   ] });
 
-  await db.counter.createMany({ data: [{ key: 'tck', value: 1050 }, { key: 'pr', value: 15 }, { key: 'emp', value: 145 }] });
+  await db.counter.createMany({ data: [{ key: 'tck', value: 1050 }, { key: 'pr', value: 15 }, { key: 'emp', value: 145 }, { key: 'ord', value: 1 }], skipDuplicates: true });
   console.log('Seeded sample data. Demo accounts use password 1234.');
 }
 
