@@ -2,7 +2,7 @@
 
 export const MODULES = [
   ['dashboard', 'แดชบอร์ดภาพรวม'], ['ticket_new', 'แจ้งปัญหา'], ['my_tickets', 'คำร้องของฉัน'],
-  ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'],
+  ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
   ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
@@ -13,7 +13,7 @@ export const isModule = (m: string): m is Module => (ALL as string[]).includes(m
 
 export const MOD_PATH: Record<Module, string> = {
   dashboard: '/dashboard', ticket_new: '/tickets/new', my_tickets: '/tickets/mine', dispatch: '/dispatch',
-  tickets_work: '/work', inventory: '/inventory', products: '/products', purchase: '/purchase', approvals: '/approvals',
+  tickets_work: '/work', inventory: '/inventory', products: '/products', orders: '/orders', purchase: '/purchase', approvals: '/approvals',
   users: '/users', audit: '/audit',
 };
 
@@ -21,7 +21,7 @@ export const HDR: Record<Module, [string, string]> = {
   dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], ticket_new: ['Helpdesk', 'แจ้งปัญหา / ขอรับบริการ'],
   my_tickets: ['Helpdesk', 'คำร้องของฉัน'], dispatch: ['IT Management', 'ศูนย์มอบหมายงานซ่อม'],
   tickets_work: ['IT Support', 'งานที่ได้รับมอบหมาย'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
-  products: ['Catalog', 'สินค้า & ราคาขาย'],
+  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
   users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };
@@ -36,10 +36,10 @@ export const isRole = (r: string): r is Role => ROLES.some(x => x[0] === r);
 
 export const ROLE_PERMS: Record<Role, Module[]> = {
   employee: ['ticket_new', 'my_tickets'],
-  storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'purchase'],
+  storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'orders', 'purchase'],
   itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory'],
   itmanager: ['ticket_new', 'my_tickets', 'dispatch'],
-  manager: ['dashboard', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
+  manager: ['dashboard', 'ticket_new', 'my_tickets', 'orders', 'approvals', 'audit'],
   executive: ['dashboard', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
   admin: ALL,
 };
@@ -133,3 +133,5 @@ export function canDecide(p: { requesterId: string; status: string; approver1Id:
 }
 /** Roles that see every PR on the purchase page (others see only their own) */
 export const PR_SEE_ALL = ['admin', 'manager', 'executive'];
+/** Who may cancel a paid order and return the customer's money. */
+export const REFUND_ROLES = ['admin', 'manager'];

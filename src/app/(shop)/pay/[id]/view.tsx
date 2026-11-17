@@ -1,20 +1,23 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cancelMyOrder, simulatePayment } from '@/server/actions/checkout';
+import { cancelMyOrder, confirmReceived, simulatePayment } from '@/server/actions/checkout';
+import type { Receipt } from '@/server/order-views';
+import { ReceiptDialog } from '@/components/receipt';
 import { useAction } from '@/components/use-action';
 import { Err } from '@/components/dialog';
 import css from '../../shop.module.css';
 
 type Props = {
   id: string; status: string; statusLabel: string; svg: string; totalText: string; expiresAt: string; paidText: string;
-  demo: boolean; canSimulate: boolean; lines: { name: string; qty: number; amountText: string }[]; shipText: string; shipTo: string;
+  demo: boolean; canSimulate: boolean; lines: { name: string; qty: number; amountText: string }[]; shipText: string; shipTo: string; receipt: Receipt | null; tracking: string;
 };
 
 export function PayScreen(p: Props) {
   const router = useRouter();
   const { run, pending, error } = useAction();
   const left = useCountdown(p.expiresAt, p.status === 'pending_payment');
+  const [showReceipt, setShowReceipt] = useState(false);
 
   // Ask the server every 3 s; once the webhook has marked the order paid (or it expired) re-render
   useEffect(() => {
@@ -49,9 +52,16 @@ export function PayScreen(p: Props) {
         <p className="lead" style={{ textAlign: 'center' }}>คำสั่งซื้อนี้ไม่ได้ชำระเงิน ร้านคืนสินค้าที่กันไว้กลับเข้าสต็อกแล้ว สั่งใหม่ได้จากตะกร้า</p>
       </> : <>
         <div className={css.done} aria-hidden>✓</div>
-        <h1 className="section-h">ชำระเงินสำเร็จ</h1>
+        <h1 className="section-h">{p.status === 'refunded' ? 'ยกเลิกและคืนเงินแล้ว' : 'ชำระเงินสำเร็จ'}</h1>
         <p className="lead" style={{ textAlign: 'center' }}>ได้รับเงิน {p.totalText} เมื่อ {p.paidText} ร้านส่งใบเสร็จไปที่อีเมลของคุณแล้ว และจะแจ้งเลขพัสดุเมื่อจัดส่ง</p>
-        <span className="tag tag-accent" style={{ alignSelf: 'center' }}>{p.statusLabel}</span>
+        <span className="tag tag-accent" style={{ alignSelf: 'center' }} data-testid="order-status">{p.statusLabel}</span>
+        {p.tracking && <div className="tnum">พัสดุ: {p.tracking}</div>}
+        <Err msg={error} />
+        <div className={css.row}>
+          {p.receipt && <button className="btn btn-secondary" onClick={() => setShowReceipt(true)}>ใบเสร็จ PDF</button>}
+          {p.status === 'shipped' && <button className="btn btn-primary" disabled={pending} onClick={() => run(() => confirmReceived(p.id))}>ได้รับสินค้าแล้ว</button>}
+        </div>
+        {showReceipt && p.receipt && <ReceiptDialog r={p.receipt} onClose={() => setShowReceipt(false)} />}
       </>}
       <section className="card" style={{ textAlign: 'left' }} aria-label="รายการสินค้า">
         {p.lines.map((l, i) => <div key={i} className={css.line}><span>{l.name} × {l.qty}</span><span className="tnum">{l.amountText}</span></div>)}

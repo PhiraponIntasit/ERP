@@ -6,6 +6,7 @@ import { demoEvent, expireOrder, handleWebhook, placeOrder as place, readAddress
 import { paymentConfig } from '../payments/config';
 import { sign } from '../payments/signature';
 import { num } from '../db';
+import { completeOrder } from '../fulfilment';
 import type { Result } from '@/lib/result';
 
 async function me() {
@@ -48,5 +49,14 @@ export async function simulatePayment(id: string) {
     const r = await handleWebhook(body, sign(body, paymentConfig.webhookSecret()));
     if (r.body.result !== 'paid') throw new Fail('ยืนยันการชำระเงินไม่สำเร็จ');
     return 'ชำระเงินสำเร็จ (จำลอง)';
+  });
+}
+
+/** The customer has the parcel: closes the order. */
+export async function confirmReceived(id: string) {
+  return act(async () => {
+    const c = await me();
+    await completeOrder({ customer: c }, id);
+    return 'ขอบคุณที่ยืนยันรับสินค้า';
   });
 }
