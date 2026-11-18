@@ -54,7 +54,8 @@ function measure(): Hit[] {
 }
 
 const PAGES = ['/dashboard', '/sales?p=90d', '/inventory', '/products', '/products/CPU-R5-7600', '/orders?tab=all', '/coupons',
-  '/warranty?q=CPU-R5-7600-SN0001', '/purchase', '/purchase/suppliers', '/approvals', '/users', '/audit', '/dispatch', '/tickets/new'];
+  '/warranty?q=CPU-R5-7600-SN0001', '/purchase', '/purchase/suppliers', '/approvals', '/users', '/audit', '/dispatch', '/tickets/new',
+  '/', '/shop', '/shop?cat=cpu', '/p/cpu-r5-7600'];
 
 for (const theme of ['light', 'dark'] as const) {
   test(`text contrast meets WCAG AA on every main page (${theme})`, async ({ page, baseURL }) => {

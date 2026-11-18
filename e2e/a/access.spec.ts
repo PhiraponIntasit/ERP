@@ -27,10 +27,16 @@ for (const [user, path, allowed] of cases) {
 }
 
 test('signed-out visitors are sent to login', async ({ page }) => {
-  for (const path of ['/', '/tickets/new', '/tickets/mine', '/dispatch', '/work', '/users']) {
+  for (const path of ['/tickets/new', '/tickets/mine', '/dispatch', '/work', '/users']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);
   }
+});
+
+test('the home page is the public storefront, not the back office', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('searchbox', { name: 'ค้นหาสินค้า' })).toBeVisible();
 });
 
 test('wrong password is rejected and audited', async ({ page }) => {
