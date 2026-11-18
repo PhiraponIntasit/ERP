@@ -5,6 +5,7 @@ import { productBySlug } from '@/server/storefront';
 import { baht } from '@/lib/domain';
 import { ProductGrid, StockNote } from '../../product-card';
 import { Gallery } from './gallery';
+import { AddToCart } from './add-to-cart';
 import css from '../../storefront.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -37,6 +38,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
           <span className={css.vat}>ราคารวม VAT 7% แล้ว</span>
           <StockNote n={p.available} />
+          <AddToCart sku={p.sku} max={p.available} />
           <dl className={css.facts}>
             <dt>รหัสสินค้า</dt><dd className="tnum">{p.sku}</dd>
             <dt>รับประกัน</dt><dd>{p.warrantyMonths > 0 ? `${p.warrantyMonths} เดือน นับจากวันจัดส่ง` : 'ไม่มีการรับประกัน'}</dd>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getCustomer } from '@/server/customer-session';
+import { cartView } from '@/server/cart';
 import { Logo } from '@/components/logo';
 import { SHOP } from '@/lib/shop';
 import { FREE_SHIPPING_MIN, UPCOUNTRY_FEE } from '@/lib/shipping';
@@ -7,7 +8,7 @@ import css from './storefront.module.css';
 
 // Storefront frame: header with search, the page, and a footer with the shop's details and policies.
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
-  const me = await getCustomer();
+  const [me, cart] = await Promise.all([getCustomer(), cartView()]);
   return (
     <div className={css.shop}>
       <header className={css.head}>
@@ -22,6 +23,9 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
             {me
               ? <Link href="/account" className={css.navLink} title={me.email}>บัญชีของฉัน · {me.name.split(' ')[0]}</Link>
               : <Link href="/account/login" className={css.navLink}>เข้าสู่ระบบ</Link>}
+            <Link href="/cart" className={`${css.navLink} ${css.cartLink}`} aria-label={`ตะกร้าสินค้า ${cart.count} ชิ้น`}>
+              ตะกร้า{cart.count > 0 && <span className={`${css.badge} tnum`} aria-hidden>{cart.count}</span>}
+            </Link>
           </nav>
         </div>
       </header>
