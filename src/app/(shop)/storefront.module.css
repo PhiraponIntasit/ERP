@@ -1,0 +1,115 @@
+/* COREPICK storefront frame and catalogue (person A). Colours come from the theme tokens only,
+   so light and dark both pass the contrast test. Thai text is left-aligned, never justified. */
+
+.shop { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-bg); }
+
+/* — header — */
+.head { position: sticky; top: 0; z-index: 30; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); }
+.headIn { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
+.logo { color: var(--color-text); text-decoration: none; flex: none; display: block; }
+.search { flex: 1; display: flex; gap: 8px; max-width: 560px; }
+.search :global(.input) { flex: 1; min-width: 0; }
+.nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.navLink { padding: 8px 12px; border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.navLink:hover { background: var(--color-neutral-100); }
+
+/* — page body & footer — */
+.main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 16px 56px; }
+.foot { border-top: 1px solid var(--color-divider); background: var(--color-surface); }
+.footIn { max-width: 1200px; margin: 0 auto; padding: 24px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 32px; font-size: 13px; color: var(--color-text-2); }
+.footIn h2 { font-size: 14px; margin: 0 0 6px; color: var(--color-text); }
+.footIn p { margin: 0; line-height: 1.6; }
+
+/* — home — */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: center; padding: 28px; border-radius: var(--radius-lg);
+  background: var(--color-surface); border: 1px solid var(--color-divider); }
+.hero h1 { margin: 0; font-size: 34px; line-height: 1.25; }
+.hero p { margin: 10px 0 0; color: var(--color-text-2); font-size: 16px; line-height: 1.6; }
+.heroCta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.perks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.perks li { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-accent-100); color: var(--color-accent-800); font-size: 14px; line-height: 1.5; }
+.perks strong { display: block; color: var(--color-text); }
+.secHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 32px 0 12px; }
+.secHead h2 { margin: 0; font-size: 20px; }
+.secHead a { font-size: 14px; }
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.cat { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--color-divider); background: var(--color-surface);
+  color: var(--color-text); text-decoration: none; font-weight: 500; }
+.cat:hover { border-color: var(--color-accent); }
+.cat span { font-size: 12px; font-weight: 400; color: var(--color-text-2); }
+
+/* — product cards — */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.card { display: flex; flex-direction: column; border-radius: var(--radius-md); border: 1px solid var(--color-divider); background: var(--color-surface);
+  color: var(--color-text); text-decoration: none; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.card:hover { border-color: var(--color-accent-300); box-shadow: var(--shadow-md); }
+.pic { aspect-ratio: 4 / 3; background: var(--color-neutral-100) center / contain no-repeat; display: grid; place-items: center; }
+.noPic { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--color-text-2); font-size: 12px; }
+.cardBody { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; flex: 1; }
+.cardBrand { font-size: 12px; color: var(--color-text-2); }
+.cardName { font-size: 14px; font-weight: 500; line-height: 1.4; flex: 1; }
+.priceRow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price { font-size: 17px; font-weight: 700; color: var(--color-text); }
+.was { font-size: 12px; color: var(--color-text-2); text-decoration: line-through; }
+.stock { font-size: 12px; color: var(--color-text-2); }
+.stockLow { font-size: 12px; color: var(--color-accent-800); font-weight: 500; }
+.stockOut { font-size: 12px; color: var(--color-danger); font-weight: 500; }
+
+/* — listing — */
+.list { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+.list > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 76px; }
+.side h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--color-text-2); }
+.facet { display: flex; flex-direction: column; gap: 2px; }
+.facet a { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); color: var(--color-text); text-decoration: none; font-size: 14px; }
+.facet a:hover { background: var(--color-neutral-100); }
+.facet a[aria-current='true'] { background: var(--color-accent-100); color: var(--color-accent-800); font-weight: 600; }
+.facet a span { color: var(--color-text-2); font-size: 12px; }
+.listHead { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.listHead h1 { margin: 0; font-size: 22px; }
+.sortForm { display: flex; gap: 8px; align-items: center; margin-left: auto; font-size: 13px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips a { text-decoration: none; }
+
+/* — product page — */
+.crumbs { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--color-text-2); margin-bottom: 14px; }
+.crumbs a { color: var(--color-accent-700); }
+.prod { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.gallery { display: flex; flex-direction: column; gap: 10px; }
+.mainPic { aspect-ratio: 4 / 3; border-radius: var(--radius-lg); border: 1px solid var(--color-divider); background: var(--color-surface) center / contain no-repeat; display: grid; place-items: center; }
+.thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.thumb { width: 64px; height: 64px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider); background: var(--color-surface) center / contain no-repeat; padding: 0; cursor: pointer; }
+.thumb[aria-pressed='true'] { border: 2px solid var(--color-accent-600); }
+.buy { display: flex; flex-direction: column; gap: 12px; }
+.buy h1 { margin: 0; font-size: 26px; line-height: 1.35; }
+.bigPrice { font-size: 30px; font-weight: 700; }
+.vat { font-size: 13px; color: var(--color-text-2); }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 14px; }
+.facts dt { color: var(--color-text-2); }
+.facts dd { margin: 0; }
+.specs { width: 100%; border-collapse: collapse; font-size: 14px; }
+.specs th, .specs td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-divider); vertical-align: top; }
+.specs th { width: 40%; font-weight: 500; color: var(--color-text-2); }
+.desc { margin: 0; line-height: 1.7; white-space: pre-line; }
+
+@media (max-width: 860px) {
+  .headIn { flex-wrap: wrap; gap: 10px; }
+  .search { order: 3; flex-basis: 100%; max-width: none; }
+  /* 16px stops iOS Safari from zooming into a field on focus */
+  .search :global(.input) { font-size: 16px; min-height: 44px; }
+  .search :global(.btn) { min-height: 44px; }
+  .hero { grid-template-columns: 1fr; padding: 20px; }
+  .hero h1 { font-size: 26px; }
+  .list { grid-template-columns: 1fr; }
+  .side { position: static; gap: 10px; }
+  .facet { flex-direction: row; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
+  .facet::-webkit-scrollbar { display: none; }
+  .facet a { flex: none; border: 1px solid var(--color-divider); border-radius: 999px; min-height: 40px; align-items: center; }
+  .prod { grid-template-columns: 1fr; gap: 18px; }
+  .buy h1 { font-size: 22px; }
+}
+@media (max-width: 520px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cardName { font-size: 13px; }
+  .price { font-size: 15px; }
+}
