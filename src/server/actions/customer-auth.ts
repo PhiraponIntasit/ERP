@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { db } from '../db';
 import { createCustomerSession, destroyCustomerSession } from '../customer-session';
+import { mergeGuestCart } from '../cart';
 import { passwordProblem } from '@/lib/password';
 
 // Storefront sign-up / sign-in / sign-out. Customers are their own table with their own session cookie
@@ -46,6 +47,7 @@ export async function registerCustomer(_prev: State, fd: FormData): Promise<Stat
     return { error: 'อีเมลนี้สมัครสมาชิกแล้ว — เข้าสู่ระบบแทน', values };   // lost a race with a second click
   }
   await createCustomerSession(id);
+  await mergeGuestCart(id);
   redirect(nextPath(fd.get('next')));
 }
 
@@ -56,6 +58,7 @@ export async function loginCustomer(_prev: State, fd: FormData): Promise<State> 
   if (!c || !ok) return { error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', values: { email } };
   if (!c.active) return { error: 'บัญชีนี้ถูกระงับ กรุณาติดต่อร้าน', values: { email } };
   await createCustomerSession(c.id);
+  await mergeGuestCart(c.id);
   redirect(nextPath(fd.get('next')));
 }
 

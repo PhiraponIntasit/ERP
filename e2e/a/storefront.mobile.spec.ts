@@ -17,3 +17,17 @@ test('listing: sideways filters, two cards a row, 16px search', async ({ page })
   expect(Math.abs(a - b)).toBeLessThan(2);   // same row
   expect(await page.getByRole('searchbox', { name: 'ค้นหาสินค้า' }).evaluate(e => getComputedStyle(e).fontSize)).toBe('16px');
 });
+
+test('cart on a phone: add, then the cart fits with big buttons', async ({ page }) => {
+  await page.goto('/p/cpu-r5-7600');
+  const buy = page.getByRole('button', { name: 'ใส่ตะกร้า' });
+  expect((await buy.boundingBox())!.height).toBeGreaterThanOrEqual(47.5);
+  await buy.tap();
+  await expect(page.locator('.toast', { hasText: 'ลงตะกร้าแล้ว' })).toBeVisible();
+  await page.goto('/cart');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  const line = page.locator('[data-sku="CPU-R5-7600"]');
+  for (const b of await line.getByRole('button').all()) expect((await b.boundingBox())!.height).toBeGreaterThanOrEqual(39.5);
+  await line.getByRole('button', { name: /^ลบ / }).tap();
+  await expect(page.getByText('ตะกร้ายังว่างอยู่')).toBeVisible();
+});
