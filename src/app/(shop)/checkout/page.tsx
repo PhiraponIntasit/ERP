@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/server/db';
 import { getCustomer } from '@/server/customer-session';
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: 'ชำระเงิน · COREPICK
 
 export default async function CheckoutPage() {
   const c = await getCustomer();
-  if (!c) return <div className="stack-4"><h1 className="section-h">ชำระเงิน</h1><p className="lead">กรุณาเข้าสู่ระบบลูกค้าก่อนสั่งซื้อ</p></div>;
+  if (!c) return <div className="stack-4"><h1 className="section-h">ชำระเงิน</h1><p className="lead">กรุณาเข้าสู่ระบบลูกค้าก่อนสั่งซื้อ</p><div className="row" style={{ gap: 8 }}><Link href="/account/login?next=/checkout" className="btn btn-primary">เข้าสู่ระบบ</Link><Link href="/account/register?next=/checkout" className="btn btn-secondary">สมัครสมาชิก</Link></div></div>;
   const [lines, addr] = await Promise.all([
     cartLines(c.id),
     db.address.findFirst({ where: { customerId: c.id }, orderBy: [{ isDefault: 'desc' }, { id: 'asc' }] }),
