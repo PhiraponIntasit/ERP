@@ -33,11 +33,11 @@ export const toTag = (raw: string) => {
   return raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 40);
 };
 
-export function ScanButton({ onScan }: { onScan: (tag: string) => void }) {
+export function ScanButton({ onScan, label = 'สแกนบาร์โค้ด / QR ของอุปกรณ์' }: { onScan: (tag: string) => void; label?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className={`btn btn-secondary ${css.btn}`} onClick={() => setOpen(true)} aria-label="สแกนบาร์โค้ด / QR ของทรัพย์สิน">
+      <button type="button" className={`btn btn-secondary ${css.btn}`} onClick={() => setOpen(true)} aria-label={label}>
         <ScanIcon /> สแกน
       </button>
       {open && <ScannerDialog onClose={() => setOpen(false)} onScan={v => { setOpen(false); onScan(v); }} />}

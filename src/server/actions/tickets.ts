@@ -4,6 +4,7 @@ import { db, nextSeq } from '../db';
 import { audit, requireAction } from '../auth';
 import { act, Fail, int, str } from '../act';
 import { MAX_IMAGE_BYTES, MAX_IMAGES, removeUpload, saveUpload, sniffImage } from '../uploads';
+import { available, take } from '../stock-reserve';
 import { CAT_LABEL, ST, URG, WORK_STATUSES } from '@/lib/domain';
 import { canTakeWork } from '../assignable';
 import { notifyAssigned, notifyClosed, notifyNewTicket, notifyReopened, notifyResolved } from '../notify';
@@ -61,17 +62,6 @@ export async function createTicket(fd: FormData) {
     }
     return 'ส่งคำร้องแจ้งซ่อมแล้ว — IT Manager จะมอบหมายช่างให้';
   });
-}
-
-/** "แจ้งปัญหา" form: is this tag in the asset register? Only the device's type and model are revealed —
- *  never who holds it, unless it's the person asking. Not finding it doesn't block the report
- *  (some kit, e.g. shared access points, isn't registered). */
-export async function lookupAsset(raw: string): Promise<{ tag: string; found: boolean; type?: string; model?: string; mine?: boolean }> {
-  const me = await requireAction('ticket_new');
-  const tag = str(raw).toUpperCase().slice(0, 40);
-  const a = tag ? await db.asset.findUnique({ where: { tag }, select: { type: true, model: true, holderId: true } }) : null;
-  if (!a) return { tag, found: false };
-  return { tag, found: true, type: a.type, model: a.model, mine: !!me.empId && a.holderId === me.empId };
 }
 
 export async function assignTicket(tid: string, assigneeId: string) {
@@ -153,10 +143,14 @@ export async function withdrawPart(tid: string, sku: string, rawQty: string) {
     const it = await db.inventoryItem.findUnique({ where: { sku } });
     if (!it) throw new Fail('กรุณาเลือกสินค้า');
     if (!(qty > 0)) throw new Fail('จำนวนต้องมากกว่า 0');
+    if (it.serialTracked) throw new Fail(`${it.name} เก็บ Serial รายชิ้น — เบิกเป็นอะไหล่ไม่ได้`);
     const after = await db.$transaction(async tx => {
-      // Conditional decrement: never goes below zero even with concurrent withdrawals.
-      const r = await tx.inventoryItem.updateMany({ where: { sku, qty: { gte: qty } }, data: { qty: { decrement: qty } } });
-      if (r.count !== 1) { const cur = await tx.inventoryItem.findUnique({ where: { sku } }); throw new Fail(`สต็อกไม่พอ — คงเหลือ ${cur?.qty ?? 0} ${it.unit}`); }
+      // Conditional decrement: never below zero, and never the units held for customers' unpaid orders
+      if (!(await take(tx, sku, qty))) {
+        const cur = await tx.inventoryItem.findUnique({ where: { sku } });
+        const free = cur ? available(cur) : 0;
+        throw new Fail(`สต็อกไม่พอ — เบิกได้ ${free} ${it.unit}` + (cur?.reserved ? ` (จองให้คำสั่งซื้อลูกค้า ${cur.reserved})` : ''));
+      }
       const cur = (await tx.inventoryItem.findUnique({ where: { sku } }))!;
       await tx.ticketPart.upsert({ where: { ticketId_sku: { ticketId: tid, sku } }, create: { ticketId: tid, sku, name: it.name, qty }, update: { qty: { increment: qty } } });
       await tx.ticketEvent.create({ data: { ticketId: tid, text: `เบิก ${it.name} × ${qty} จากคลัง`, by: me.name } });

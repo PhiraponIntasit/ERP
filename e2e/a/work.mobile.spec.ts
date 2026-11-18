@@ -34,7 +34,7 @@ test('fits the screen; filters narrow the list; requester can be called', async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
   const card = page.locator('.tcard', { hasText: newId });
-  const phone = (await db.user.findUniqueOrThrow({ where: { username: USERS.employee }, include: { employee: true } })).employee!.phone;
+  const phone = (await db.user.findUniqueOrThrow({ where: { username: USERS.employee } })).phone;
   await expect(card.getByRole('link', { name: /โทรหา/ })).toHaveAttribute('href', `tel:${phone.replace(/[^\d+]/g, '')}`);
 
   await page.getByRole('button', { name: /^รออะไหล่/ }).tap();

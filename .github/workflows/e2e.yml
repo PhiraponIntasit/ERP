@@ -21,6 +21,9 @@ jobs:
       COOKIE_SECURE: 'false'
       APP_URL: http://localhost:3000   # base for links in emails
       MAIL_OUTBOX_DIR: ./storage/outbox   # no SMTP in CI: emails are written here so tests can check them
+      PAYMENT_WEBHOOK_SECRET: e2e-only-webhook-secret-0123456789   # test-only value, not a real key
+      CRON_SECRET: e2e-only-cron-secret
+      SHOW_DEMO_ACCOUNTS: 'true'   # demo accounts + /demo-shop, used by the demo rehearsal test
       CI: 'true'
     steps:
       - uses: actions/checkout@v4

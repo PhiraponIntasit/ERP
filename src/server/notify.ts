@@ -17,11 +17,11 @@ const enabled = () => mailConfigured() || !!outboxDir() || process.env.NODE_ENV 
 async function deliver(userIds: string[], actorId: string, subject: string, lines: string[], linkPath: string) {
   const ids = [...new Set(userIds)].filter(id => id && id !== actorId);
   if (!ids.length || !enabled()) return;
-  const users = await db.user.findMany({ where: { id: { in: ids }, active: true }, select: { name: true, employee: { select: { email: true } } } });
+  const users = await db.user.findMany({ where: { id: { in: ids }, active: true }, select: { name: true, email: true } });
   const base = appUrl();
   const link = base ? base + linkPath : '';
   for (const u of users) {
-    const to = u.employee?.email?.trim();
+    const to = u.email.trim();
     if (!to) continue;
     const text = [`สวัสดีคุณ ${u.name}`, '', ...lines, ...(link ? ['', `เปิดดู: ${link}`] : []), '', '— IT Products Store (อีเมลอัตโนมัติ ไม่ต้องตอบกลับ)'].join('\n');
     const html = `<p>สวัสดีคุณ ${esc(u.name)}</p>${lines.map(l => `<p>${esc(l)}</p>`).join('')}`

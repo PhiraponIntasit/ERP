@@ -10,10 +10,10 @@
 
 **ไฟล์หลัก:**
 
-- `src/app/(app)/tickets/`, `dispatch/`, `work/`, `employees/`, `assets/`, `users/`
+- `src/app/(app)/tickets/`, `dispatch/`, `work/`, `users/`
 - `src/app/login/`, `src/app/forgot-password/`, `src/app/reset-password/`
 - `src/server/actions/tickets.ts`, `people.ts`, `auth.ts`, `password-reset.ts`
-- `src/server/uploads.ts`, `assets.ts`, `password-reset.ts`, `mail.ts`, `notify.ts`
+- `src/server/uploads.ts`, `password-reset.ts`, `mail.ts`, `notify.ts`
 - `src/lib/password.ts` — กฎความยาวรหัสผ่าน
 - `src/app/api/files/`, `src/app/api/zxing-reader/`
 - `src/components/ticket-bits.tsx`, `change-password.tsx`, `category-icons.tsx`, `barcode-scanner.tsx`

@@ -1,5 +1,7 @@
 # Nightly encrypted dump of the production database, kept as a workflow artifact for 30 days.
 # Repo secrets: PROD_DATABASE_URL_UNPOOLED (direct connection string), BACKUP_PASSPHRASE.
+# Every dump is restored into a scratch Postgres and checked (scripts/verify-backup.sh) before it is kept,
+# so a backup that can't be restored or whose money/stock figures don't add up fails the run.
 # Restore: gpg -d erp-*.dump.gpg > erp.dump && pg_restore --clean --no-owner -d "$DATABASE_URL" erp.dump
 name: db-backup
 on:
@@ -11,8 +13,16 @@ permissions:
 jobs:
   dump:
     runs-on: ubuntu-24.04
+    services:
+      scratch:
+        image: postgres:17
+        env: { POSTGRES_USER: check, POSTGRES_PASSWORD: check, POSTGRES_DB: check }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U check" --health-interval 5s --health-retries 10
     steps:
-      - name: Dump and encrypt
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: scripts }
+      - name: Dump, verify by restoring, encrypt
         env:
           DB: ${{ secrets.PROD_DATABASE_URL_UNPOOLED }}
           PASS: ${{ secrets.BACKUP_PASSPHRASE }}
@@ -21,6 +31,7 @@ jobs:
           f="erp-$(date -u +%Y%m%d-%H%M).dump"
           docker run --rm -e DB postgres:17 sh -c 'pg_dump --format=custom --no-owner "$DB"' > "$f"
           test -s "$f"
+          docker run --rm --network host -v "$PWD:/w" -w /w postgres:17 sh scripts/verify-backup.sh "$f" postgresql://check:check@localhost:5432/check
           gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" --symmetric --cipher-algo AES256 -o "$f.gpg" "$f"
           rm "$f"
           echo "FILE=$f.gpg" >> "$GITHUB_ENV"
