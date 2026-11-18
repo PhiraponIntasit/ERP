@@ -92,12 +92,25 @@
 .specs th { width: 40%; font-weight: 500; color: var(--color-text-2); }
 .desc { margin: 0; line-height: 1.7; white-space: pre-line; }
 
+/* — customer account — */
+.authCard { width: min(440px, 100%); margin: 24px auto; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.authCard h1 { margin: 0; font-size: 24px; }
+.authAlt { margin: 0; font-size: 14px; color: var(--color-text-2); text-align: center; }
+.account { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.account > :global(.card) { padding: 20px; gap: 12px; }
+.cardH { margin: 0; font-size: 17px; }
+.addrList { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.6; }
+.addrList li + li { border-top: 1px solid var(--color-divider); padding-top: 10px; }
+
 @media (max-width: 860px) {
   .headIn { flex-wrap: wrap; gap: 10px; }
   .search { order: 3; flex-basis: 100%; max-width: none; }
   /* 16px stops iOS Safari from zooming into a field on focus */
   .search :global(.input) { font-size: 16px; min-height: 44px; }
   .search :global(.btn) { min-height: 44px; }
+  .authCard { margin: 8px auto; padding: 18px; }
+  .authCard :global(.input) { font-size: 16px; min-height: 44px; }
+  .authCard :global(.btn) { min-height: 48px; }
   .hero { grid-template-columns: 1fr; padding: 20px; }
   .hero h1 { font-size: 26px; }
   .list { grid-template-columns: 1fr; }

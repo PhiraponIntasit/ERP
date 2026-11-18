@@ -1,11 +1,13 @@
 import Link from 'next/link';
+import { getCustomer } from '@/server/customer-session';
 import { Logo } from '@/components/logo';
 import { SHOP } from '@/lib/shop';
 import { FREE_SHIPPING_MIN, UPCOUNTRY_FEE } from '@/lib/shipping';
 import css from './storefront.module.css';
 
 // Storefront frame: header with search, the page, and a footer with the shop's details and policies.
-export default function ShopLayout({ children }: { children: React.ReactNode }) {
+export default async function ShopLayout({ children }: { children: React.ReactNode }) {
+  const me = await getCustomer();
   return (
     <div className={css.shop}>
       <header className={css.head}>
@@ -17,6 +19,9 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           </form>
           <nav className={css.nav} aria-label="เมนูร้าน">
             <Link href="/shop" className={css.navLink}>สินค้าทั้งหมด</Link>
+            {me
+              ? <Link href="/account" className={css.navLink} title={me.email}>บัญชีของฉัน · {me.name.split(' ')[0]}</Link>
+              : <Link href="/account/login" className={css.navLink}>เข้าสู่ระบบ</Link>}
           </nav>
         </div>
       </header>
