@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { ROLE_PERMS, type Role } from '../src/lib/domain';
 import { seedSales, seedStore } from './seed-store';
+import { seedDemo } from './seed-demo';
 
 const db = new PrismaClient();
 const TZ = process.env.DISPLAY_TZ || 'Asia/Bangkok';
@@ -69,6 +70,7 @@ async function main() {
   await db.customer.create({ data: { id: 'cus-demo', email: 'customer@example.com', passwordHash: hash, name: 'มานี ใจดี', phone: '0899999999',
     addresses: { create: { name: 'มานี ใจดี', phone: '0899999999', line1: '99/1 ถนนนิมมานเหมินท์', subdistrict: 'สุเทพ', district: 'เมืองเชียงใหม่', province: 'เชียงใหม่', postcode: '50200', isDefault: true } } } });
   await seedSales(db, hash);
+  await seedDemo(db);
 
   const h = (t: Date, text: string, by: string) => ({ t, text, by });
   const tickets = [
