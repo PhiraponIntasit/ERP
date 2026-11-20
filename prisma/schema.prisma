@@ -133,6 +133,7 @@ model SerialNumber {
   orderLineId String?
   orderLine   OrderLine?    @relation(fields: [orderLineId], references: [id], onDelete: SetNull)
   createdAt   DateTime      @default(now())
+  claims      Claim[]
 
   @@index([sku, status])
 }
@@ -291,18 +292,19 @@ model Counter {
 
 /// A shop customer. Separate from User (staff): customers never reach the back office.
 model Customer {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String            @id @default(cuid())
+  email        String            @unique
   passwordHash String
   name         String
-  phone        String    @default("")
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
+  phone        String            @default("")
+  active       Boolean           @default(true)
+  createdAt    DateTime          @default(now())
   addresses    Address[]
   cart         Cart?
   builds       PcBuild[]
   orders       Order[]
   sessions     CustomerSession[]
+  claims       Claim[]
 }
 
 /// A signed-in customer's browser. Kept apart from staff sessions so a customer cookie can never open the back office.
@@ -377,36 +379,37 @@ model PcBuildItem {
 // ── Orders and payments (person B) ──────────────────────────────────────────
 
 model Order {
-  id          String      @id // ORD-2027-000123
-  customerId  String
-  customer    Customer    @relation(fields: [customerId], references: [id])
+  id           String      @id // ORD-2027-000123
+  customerId   String
+  customer     Customer    @relation(fields: [customerId], references: [id])
   /// pending_payment | paid | packing | shipped | completed | cancelled | expired | refunded
-  status      String
-  subtotal    Decimal     @db.Decimal(12, 2)
-  discount    Decimal     @default(0) @db.Decimal(12, 2)
-  shippingFee Decimal     @default(0) @db.Decimal(12, 2)
+  status       String
+  subtotal     Decimal     @db.Decimal(12, 2)
+  discount     Decimal     @default(0) @db.Decimal(12, 2)
+  shippingFee  Decimal     @default(0) @db.Decimal(12, 2)
   /// Amount the customer pays (VAT included)
-  total       Decimal     @db.Decimal(12, 2)
-  couponCode  String?
+  total        Decimal     @db.Decimal(12, 2)
+  couponCode   String?
   /// Delivery address as it was when the order was placed
-  shipName    String
-  shipPhone   String
-  shipAddress String
-  carrier     String?
-  trackingNo  String?
-  createdAt   DateTime    @default(now())
+  shipName     String
+  shipPhone    String
+  shipAddress  String
+  carrier      String?
+  trackingNo   String?
+  createdAt    DateTime    @default(now())
   /// Unpaid orders expire here and their reserved stock is released
-  expiresAt   DateTime
-  paidAt      DateTime?
-  shippedAt   DateTime?
-  completedAt DateTime?
+  expiresAt    DateTime
+  paidAt       DateTime?
+  shippedAt    DateTime?
+  completedAt  DateTime?
   /// Set when staff cancel a paid order and return the money
   refundedAt   DateTime?
   refundReason String?
   /// Bank transfer reference of the refund
   refundRef    String?
-  lines       OrderLine[]
-  payments    Payment[]
+  lines        OrderLine[]
+  payments     Payment[]
+  claims       Claim[]
 
   @@index([customerId, createdAt])
   @@index([status, expiresAt])
@@ -480,4 +483,31 @@ model Coupon {
   note            String   @default("")
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
+}
+
+/// A warranty claim a customer raises for one serial-tracked unit they bought (person A).
+/// submitted → received (the shop has the unit) → replaced (via replaceUnit in warranty.ts) | rejected; the customer may cancel while submitted.
+model Claim {
+  id         String       @id // CLM-2026-000001
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  serial     String
+  unit       SerialNumber @relation(fields: [serial], references: [serial])
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id])
+  /// What is wrong, in the customer's words
+  problem    String
+  /// submitted | received | replaced | rejected | cancelled
+  status     String       @default("submitted")
+  /// Serial of the replacement unit, once replaced
+  newSerial  String?
+  /// Shop's note to the customer: rejection reason, or how the new unit is sent back
+  staffNote  String       @default("")
+  createdAt  DateTime     @default(now())
+  receivedAt DateTime?
+  closedAt   DateTime?
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+  @@index([serial])
 }
