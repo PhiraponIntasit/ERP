@@ -49,7 +49,7 @@ test('suspending an account signs it out immediately; re-enabling restores acces
   await admin.goto('/users');
   const row = admin.locator('tr', { hasText: username });
   await row.getByRole('button', { name: 'ระงับ' }).click();
-  await expect(row).toContainText('ระงับ');
+  await expect(row.getByRole('button', { name: 'เปิดใช้' })).toBeVisible(); // the "ระงับ" button text alone would match before the action finishes
 
   await victim.goto('/tickets/mine');
   await expect(victim).toHaveURL(/\/login/);
