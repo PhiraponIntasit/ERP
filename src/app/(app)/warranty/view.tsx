@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { SerialInfo } from '@/server/warranty';
 import { replace, rma } from '@/server/actions/warranty';
@@ -24,6 +25,12 @@ export function WarrantyActions({ info }: { info: SerialInfo }) {
   const router = useRouter();
   const [newS, setNewS] = useState(''), [note, setNote] = useState(''), [ref, setRef] = useState('');
   const { run, pending, error } = useAction();
+  if (info.status === 'sold' && info.openClaim) return (
+    <div className="alert-box" role="status">
+      <div>ลูกค้าแจ้งเคลมเครื่องนี้แล้ว (<strong className="tnum">{info.openClaim}</strong>) — รับเครื่อง เปลี่ยนเครื่อง หรือไม่อนุมัติที่หน้าเคลม เพื่อให้เคลมปิดพร้อมกันและลูกค้าได้รับแจ้ง</div>
+      <Link href={`/claims/${info.openClaim}`} className="btn btn-primary ml-auto">ไปที่เคลม {info.openClaim}</Link>
+    </div>
+  );
   if (info.status === 'sold' && info.inWarranty) return (
     <div className="card stack-4" style={{ background: 'transparent' }} aria-label="เปลี่ยนเครื่องใหม่">
       <div className="card-title" style={{ fontSize: 16 }}>เปลี่ยนเครื่องใหม่ให้ลูกค้า</div>

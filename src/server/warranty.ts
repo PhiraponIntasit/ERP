@@ -1,6 +1,6 @@
 import 'server-only';
 import type { User } from '@prisma/client';
-import { db } from './db';
+import { db, type Tx } from './db';
 import { Fail, str } from './act';
 import { audit } from './auth';
 import { take } from './stock-reserve';
@@ -27,20 +27,24 @@ export async function lookupSerial(raw: string) {
   const start = o?.shippedAt ?? o?.paidAt ?? null;
   const until = start ? addMonths(start, s.item.warrantyMonths) : null;
   const history = await db.auditLog.findMany({ where: { cat: { in: ['warranty', 'order'] }, OR: [{ target: serial }, { detail: { contains: serial } }] }, orderBy: [{ t: 'asc' }, { id: 'asc' }] });
+  // A customer's open claim on this unit (person A's claims): the swap then belongs on the claim page
+  const openClaim = (await db.claim.findFirst({ where: { serial, status: { in: ['submitted', 'received'] } }, select: { id: true } }))?.id ?? null;
   const spares = s.status === 'sold' ? await db.serialNumber.findMany({ where: { sku: s.sku, status: 'in_stock' }, orderBy: { createdAt: 'asc' }, take: 20, select: { serial: true } }) : [];
   return {
     serial: s.serial, status: s.status, sku: s.item.sku, name: s.item.name, warrantyMonths: s.item.warrantyMonths, receivedRef: s.receivedRef,
     orderId: o?.id ?? null, customer: o?.customer ?? null, soldText: start ? fmtDT(start) : '', untilText: until ? fmtDT(until) : '',
     inWarranty: !!until && until > new Date(),
-    spares: spares.map(x => x.serial),
+    spares: spares.map(x => x.serial), openClaim,
     history: history.map(h => ({ id: String(h.id), tText: fmtDT(h.t), action: h.action, by: h.by, detail: h.detail })),
   };
 }
 export type SerialInfo = NonNullable<Awaited<ReturnType<typeof lookupSerial>>>;
 
 /** Swap a sold unit under warranty for `newRaw` from stock. The new unit leaves stock (it can't be one held for an order);
- *  the old one comes back as `claim` and is not sellable. Both stay linked to the customer's order line. */
-export async function replaceUnit(me: Staff, oldRaw: string, newRaw: string, noteIn: string) {
+ *  the old one comes back as `claim` and is not sellable. Both stay linked to the customer's order line.
+ *  Pass `inTx` to make the swap part of the caller's transaction (claims: close the claim and swap together,
+ *  so a claim can never end rejected with the unit already swapped). */
+export async function replaceUnit(me: Staff, oldRaw: string, newRaw: string, noteIn: string, inTx?: Tx) {
   const oldS = norm(oldRaw), newS = norm(newRaw), note = str(noteIn).slice(0, 300);
   if (!note) throw new Fail('กรุณาระบุอาการเสีย / เลขที่เคลม');
   if (!newS) throw new Fail('กรุณาสแกน Serial ของเครื่องใหม่');
@@ -50,7 +54,7 @@ export async function replaceUnit(me: Staff, oldRaw: string, newRaw: string, not
   if (info.status !== 'sold' || !info.orderId) throw new Fail('เปลี่ยนได้เฉพาะเครื่องที่ขายให้ลูกค้าแล้ว');
   if (!info.inWarranty) throw new Fail(`หมดประกันแล้ว (ถึง ${info.untilText})`);
 
-  await db.$transaction(async tx => {
+  const swap = async (tx: Tx) => {
     const old = await tx.serialNumber.findUniqueOrThrow({ where: { serial: oldS } });
     const n = await tx.serialNumber.updateMany({ where: { serial: newS, sku: old.sku, status: 'in_stock' }, data: { status: 'sold', orderLineId: old.orderLineId } });
     if (n.count !== 1) throw new Fail(`Serial ${newS} ไม่ใช่ ${info.name} ที่อยู่ในสต็อก`);
@@ -59,7 +63,8 @@ export async function replaceUnit(me: Staff, oldRaw: string, newRaw: string, not
     if (o.count !== 1) throw new Fail('สถานะเครื่องเดิมเปลี่ยนไปแล้ว — ลองใหม่');
     await tx.stockMove.create({ data: { sku: old.sku, type: 'out', qty: 1, ref: `เคลม ${info.orderId}`, by: me.name } });
     await audit(tx, me, 'warranty', 'เปลี่ยนสินค้าตามประกัน', oldS, `${info.name} · เครื่องเดิม ${oldS} → เครื่องใหม่ ${newS} · คำสั่งซื้อ ${info.orderId} · ${note}`);
-  });
+  };
+  if (inTx) await swap(inTx); else await db.$transaction(swap);
 }
 
 /** A defective unit goes back to the supplier (RMA). */

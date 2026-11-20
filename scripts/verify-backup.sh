@@ -12,7 +12,7 @@ trap 'psql "$ADMIN" -qc "DROP DATABASE IF EXISTS $NAME" >/dev/null' EXIT
 pg_restore --no-owner --exit-on-error -d "$SCRATCH" "$DUMP"
 echo "── restored $(basename "$DUMP")"
 psql "$SCRATCH" -Atc 'SELECT COUNT(*) || '"' migrations applied, last: '"' || MAX("migration_name") FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL'
-psql "$SCRATCH" -At -F ' ' -c "SELECT 'orders', COUNT(*) FROM \"Order\" UNION ALL SELECT 'payments', COUNT(*) FROM \"Payment\" UNION ALL SELECT 'products', COUNT(*) FROM \"InventoryItem\" UNION ALL SELECT 'serials', COUNT(*) FROM \"SerialNumber\" UNION ALL SELECT 'audit log', COUNT(*) FROM \"AuditLog\""
+psql "$SCRATCH" -At -F ' ' -c "SELECT 'orders', COUNT(*) FROM \"Order\" UNION ALL SELECT 'payments', COUNT(*) FROM \"Payment\" UNION ALL SELECT 'products', COUNT(*) FROM \"InventoryItem\" UNION ALL SELECT 'serials', COUNT(*) FROM \"SerialNumber\" UNION ALL SELECT 'customers', COUNT(*) FROM \"Customer\" UNION ALL SELECT 'claims', COUNT(*) FROM \"Claim\" UNION ALL SELECT 'audit log', COUNT(*) FROM \"AuditLog\""
 BAD=$(psql "$SCRATCH" -At -F ' | ' -f "$DIR/integrity.sql")
 if [ -n "$BAD" ]; then echo "── integrity problems:"; echo "$BAD"; exit 1; fi
 echo "── integrity checks: OK"

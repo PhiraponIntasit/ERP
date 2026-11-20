@@ -178,9 +178,15 @@ export async function approveClaim(me: Staff, id: string, newSerialIn: string, n
   const c = await db.claim.findUnique({ where: { id } });
   if (!c) throw new Fail('ไม่พบเคลมนี้');
   if (c.status !== 'received') throw new Fail(c.status === 'submitted' ? 'กด "รับเครื่องแล้ว" ก่อน เมื่อได้รับสินค้าจากลูกค้า' : 'เคลมนี้ปิดไปแล้ว');
-  // replaceUnit refuses a unit that is no longer `sold`, so a second approval of the same claim fails there.
-  await replaceUnit(me, c.serial, newSerial, `เคลม ${id} · ${c.problem}`.slice(0, 300));
-  const done = await moveClaim(me, id, ['received'], { status: 'replaced', newSerial, staffNote: note, closedAt: new Date() }, 'อนุมัติเคลม · เปลี่ยนเครื่อง', `เครื่องใหม่ ${newSerial}${note ? ' · ' + note : ''}`);
+  // One transaction: close the claim first (its conditional update locks the row, so a concurrent reject waits and then
+  // finds it closed), then swap through B's replaceUnit. If the swap fails, the claim stays `received`.
+  const done = await db.$transaction(async tx => {
+    const r = await tx.claim.updateMany({ where: { id, status: 'received' }, data: { status: 'replaced', newSerial, staffNote: note, closedAt: new Date() } });
+    if (r.count !== 1) throw new Fail('สถานะเคลมเปลี่ยนไปแล้ว — โหลดหน้าใหม่');
+    await replaceUnit(me, c.serial, newSerial, `เคลม ${id} · ${c.problem}`.slice(0, 300), tx);
+    await audit(tx, me, 'warranty', 'อนุมัติเคลม · เปลี่ยนเครื่อง', c.serial, [id, `เครื่องใหม่ ${newSerial}`, note].filter(Boolean).join(' · '));
+    return tx.claim.findUniqueOrThrow({ where: { id }, include: { customer: true, unit: { select: { item: { select: { name: true } } } } } });
+  });
   await mailSafe(done.customer.email, `ผลการเคลม ${id}: เปลี่ยนเครื่องใหม่ให้แล้ว`,
     [`เรียนคุณ${done.customer.name}`, '', `ร้านเปลี่ยน ${done.unit.item.name} ให้แล้ว`, `เครื่องเดิม Serial ${c.serial} → เครื่องใหม่ Serial ${newSerial}`, ...(note ? [`หมายเหตุ: ${note}`] : []), '', 'ประกันของเครื่องใหม่นับต่อจากเครื่องเดิม'].join('\n'));
 }
