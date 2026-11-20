@@ -15,6 +15,10 @@ const cases: [string, string, boolean][] = [
   [USERS.itsupport, '/users', false],
   [USERS.manager, '/users', false],
   [USERS.admin, '/users', true],
+  [USERS.manager, '/customers', true],
+  [USERS.admin, '/customers', true],
+  [USERS.storekeeper, '/customers', false],
+  [USERS.employee, '/customers', false],
 ];
 
 for (const [user, path, allowed] of cases) {
@@ -27,7 +31,7 @@ for (const [user, path, allowed] of cases) {
 }
 
 test('signed-out visitors are sent to login', async ({ page }) => {
-  for (const path of ['/tickets/new', '/tickets/mine', '/dispatch', '/work', '/users']) {
+  for (const path of ['/tickets/new', '/tickets/mine', '/dispatch', '/work', '/users', '/customers', '/customers/cus-demo']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);
   }
