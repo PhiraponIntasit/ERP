@@ -1,11 +1,12 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 // Demo data for person A's storefront features (fictitious people):
-// · มานี ใจดี (customer@example.com) has a delivered order and one on the way, both with serial-numbered parts,
+// · มานี ใจดี (customer@example.com) has a delivered order and one shipped but not yet confirmed received, both with serial-numbered parts,
 //   so "คำสั่งซื้อของฉัน" and "แจ้งเคลม" can be shown live, plus two saved PC builds.
 // · Three other customers' claims sit in the back office as submitted / received / rejected.
 // Sold units get their own serials (…-SN9001), so stock on the shelf and the integrity checks are unchanged.
-// Keep paid dates well inside 90 days of today and away from window edges: the sales report's 90-day view and its test count them.
+// Keep paid dates more than 7 and less than 90 days ago: the sales report's 7-day best sellers (top 10) and 90-day totals are
+// checked by e2e/b/coupons-sales.spec.ts against whatever else is in the window.
 
 const DAY = 864e5;
 const CHIANG_MAI = '99/1 ถนนนิมมานเหมินท์ ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200';
@@ -64,7 +65,7 @@ async function claim(db: PrismaClient, k: ClaimSeed) {
 export async function seedDemo(db: PrismaClient) {
   // มานี: a delivered AM5 set (claimable) and a graphics card still on its way (confirm receipt, then claim).
   await sell(db, { customerId: 'cus-demo', skus: ['CPU-R5-7600', 'MB-MSI-B650M', 'RAM-KF-32D5'], paidDaysAgo: 45, status: 'completed', carrier: 'Kerry Express', address: CHIANG_MAI });
-  await sell(db, { customerId: 'cus-demo', skus: ['VGA-GB-4060'], paidDaysAgo: 2, status: 'shipped', carrier: 'Flash Express', address: CHIANG_MAI });
+  await sell(db, { customerId: 'cus-demo', skus: ['VGA-GB-4060'], paidDaysAgo: 9, status: 'shipped', carrier: 'Flash Express', address: CHIANG_MAI });
 
   // Back-office claim queue: one waiting for the unit, one being checked, one rejected.
   const a = await sell(db, { customerId: 'cus-1', skus: ['VGA-ASUS-4070S'], paidDaysAgo: 30, status: 'completed', carrier: 'Kerry Express', address: BANGKOK });
