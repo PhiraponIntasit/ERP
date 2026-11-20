@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getCustomer } from '@/server/customer-session';
 import { myClaims } from '@/server/claims';
+import { claimTimeline } from '@/server/claim-service';
 import { SHOP } from '@/lib/shop';
 import { CancelClaim } from './cancel';
 import css from '../../storefront.module.css';
@@ -13,6 +14,7 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
   const c = await getCustomer();
   if (!c) redirect('/account/login?next=/account/claims');
   const [claims, sp] = await Promise.all([myClaims(c.id), searchParams]);
+  const logs = new Map(await Promise.all(claims.map(async x => [x.id, (await claimTimeline(x.id, true))!] as const)));
   const fresh = claims.find(x => x.id === sp.new && x.status === 'submitted');
   return (
     <div className={`anim-page ${css.account}`}>
@@ -46,6 +48,19 @@ export default async function MyClaimsPage({ searchParams }: { searchParams: Pro
               <p className={css.problem}><span className="muted">อาการ: </span>{x.problem}</p>
               {x.status === 'replaced' && <p className={css.claimNote}>เปลี่ยนเป็นเครื่องใหม่ Serial <span className="tnum">{x.newSerial}</span> แล้ว{x.staffNote && `\n${x.staffNote}`}</p>}
               {x.status === 'rejected' && <p className={css.claimNote}>เหตุผลจากร้าน: {x.staffNote}</p>}
+              {x.status === 'repaired' && <p className={css.claimNote}>ซ่อมเสร็จ ร้านส่งเครื่องเดิมคืนให้{`\n`}{x.staffNote}{logs.get(x.id)!.parts.length > 0 && `\nอะไหล่ที่เปลี่ยน: ${logs.get(x.id)!.parts.map(p => `${p.name} × ${p.qty}`).join(', ')}`}</p>}
+              <details className={css.claimLog}>
+                <summary>ความคืบหน้า ({logs.get(x.id)!.lines.length})</summary>
+                <ol aria-label={`ความคืบหน้าเคลม ${x.id}`}>
+                  {logs.get(x.id)!.lines.map(l => (
+                    <li key={l.key}>
+                      <span className="muted tnum">{l.tText}</span>
+                      <span style={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>{l.text}</span>
+                      {l.photos.length > 0 && <span className={css.claimPhotos}>{l.photos.map(p => <a key={p.id} href={p.src} target="_blank" rel="noreferrer"><img src={p.src} alt={p.name} width={72} height={72} /></a>)}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </details>
               {x.status === 'submitted' && <div className={css.orderActions}><CancelClaim id={x.id} /></div>}
             </li>
           ))}

@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { can, requirePage } from '@/server/auth';
 import { claimDetail } from '@/server/claims';
+import { claimStaff, claimTimeline, repairParts } from '@/server/claim-service';
+import { ROLE_LABEL } from '@/lib/domain';
 import { ClaimActions } from './actions';
+import { ServicePanel } from './service';
 
 const dl = { margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: 14 } as const;
 
@@ -10,6 +13,8 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
   const me = await requirePage('claims');
   const c = await claimDetail((await params).id);
   if (!c) notFound();
+  const open = c.status === 'submitted' || c.status === 'received';
+  const [tl, staff, parts] = await Promise.all([claimTimeline(c.id, false), open ? claimStaff() : [], c.status === 'received' ? repairParts() : []]);
   const u = c.unit;
   return (
     <div className="anim-page stack-4">
@@ -39,6 +44,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
           </div>
           {c.status === 'replaced' && <p style={{ margin: 0 }}>เปลี่ยนเป็นเครื่องใหม่ Serial <b className="tnum">{c.newSerial}</b>{c.staffNote && ` · ${c.staffNote}`}</p>}
           {c.status === 'rejected' && <p style={{ margin: 0 }}>เหตุผลที่ไม่อนุมัติ: {c.staffNote}</p>}
+          {c.status === 'repaired' && <p style={{ margin: 0 }}>ซ่อมคืนเครื่องเดิม: {c.staffNote}{tl!.parts.length > 0 && <><br />อะไหล่: {tl!.parts.map(p => `${p.name} × ${p.qty}`).join(', ')}</>}</p>}
         </section>
 
         <section className="card" aria-labelledby="u-h" style={{ cursor: 'default' }}>
@@ -58,7 +64,9 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
         </section>
       </div>
 
-      {(c.status === 'submitted' || c.status === 'received') && <ClaimActions id={c.id} status={c.status} spares={u?.status === 'sold' ? u.spares : []} inWarranty={!!u?.inWarranty} />}
+      <ServicePanel id={c.id} open={open} tl={tl!} staff={staff} roleLabel={ROLE_LABEL} />
+
+      {open && <ClaimActions id={c.id} status={c.status} spares={u?.status === 'sold' ? u.spares : []} inWarranty={!!u?.inWarranty} parts={parts} />}
 
       {u && u.history.length > 0 && (
         <section aria-labelledby="h-h" className="stack-4" style={{ gap: 8 }}>

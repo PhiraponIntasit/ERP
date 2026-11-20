@@ -40,9 +40,11 @@ export async function shellData(me: User) {
     db.order.count({ where: { status: 'paid' } }),
     db.order.count({ where: { status: { in: ['expired', 'cancelled'] }, payments: { some: { status: 'successful' } } } }),
   ]) : [0, 0];
+  // Technicians see their own claim queue; everyone else with the menu sees all open claims.
+  const tech = me.role === 'itsupport';
   const [claimsNew, claimsHeld] = can(me, 'claims') ? await Promise.all([
-    db.claim.count({ where: { status: 'submitted' } }),
-    db.claim.count({ where: { status: 'received' } }),
+    tech ? 0 : db.claim.count({ where: { status: 'submitted' } }),
+    db.claim.count({ where: { status: 'received', ...(tech ? { assigneeId: me.id } : {}) } }),
   ]) : [0, 0];
   const lowNoPR = low?.lowNoPR ?? [];
   Object.assign(badges, { claims: claimsNew + claimsHeld, dispatch: newCount, tickets_work: myOpenWork, approvals: pendingN, inventory: lowNoPR.length, my_tickets: myResolved, purchase: approvedMine, orders: toPack + lateMoney });

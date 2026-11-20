@@ -37,8 +37,8 @@ export const isRole = (r: string): r is Role => ROLES.some(x => x[0] === r);
 export const ROLE_PERMS: Record<Role, Module[]> = {
   employee: ['ticket_new', 'my_tickets'],
   storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'orders', 'warranty', 'claims', 'purchase'],
-  itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory'],
-  itmanager: ['ticket_new', 'my_tickets', 'dispatch'],
+  itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory', 'claims'],
+  itmanager: ['ticket_new', 'my_tickets', 'dispatch', 'claims'],
   manager: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'orders', 'coupons', 'warranty', 'claims', 'customers', 'approvals', 'audit'],
   executive: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
   admin: ALL,
