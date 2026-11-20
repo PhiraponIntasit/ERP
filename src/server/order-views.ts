@@ -14,7 +14,7 @@ export const TABS = [
 ] as const;
 export type Tab = (typeof TABS)[number][0];
 
-const LATE_MONEY: Prisma.OrderWhereInput = { status: { in: ['expired', 'cancelled'] }, payments: { some: { status: 'successful' } } };
+export const LATE_MONEY: Prisma.OrderWhereInput = { status: { in: ['expired', 'cancelled'] }, payments: { some: { status: 'successful' } } };
 const WHERE: Record<Tab, Prisma.OrderWhereInput> = {
   topack: { status: 'paid' }, packing: { status: 'packing' }, shipped: { status: 'shipped' }, unpaid: { status: 'pending_payment' },
   refund: LATE_MONEY, closed: { status: { in: ['completed', 'refunded', 'expired', 'cancelled'] } }, all: {},
