@@ -1,4 +1,5 @@
 'use server';
+import { adjustStock, inStockSerials } from '../stock-adjust';
 import { Prisma } from '@prisma/client';
 import { db, nextSeq, num, type Tx } from '../db';
 import { audit, requireAction } from '../auth';
@@ -200,4 +201,18 @@ export async function setSupplierActive(id: string, active: boolean) {
     });
     return active ? `เปิดใช้ ${s.name}` : `หยุดใช้ ${s.name} — จะไม่อยู่ในรายการตอนสร้างใบขอซื้อ`;
   });
+}
+
+// ── adjustments: damaged / lost / physical count (same permission as receiving stock) ──
+
+export async function adjust(sku: string, kind: string, amount: string, reason: string, serials: string[] = []) {
+  return act(async () => {
+    const me = await requireAction('purchase');
+    return adjustStock(me, sku, kind, amount, reason, serials);
+  });
+}
+
+export async function serialsOnShelf(sku: string): Promise<string[]> {
+  await requireAction('purchase');
+  return inStockSerials(str(sku));
 }

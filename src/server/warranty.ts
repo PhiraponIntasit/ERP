@@ -8,7 +8,7 @@ import { fmtDT } from '@/lib/domain';
 
 // After-sales by serial number (B's half of claims): who bought this unit, is it under warranty, and swap it
 // for a new one from stock. The claim workflow (person A) calls `replaceUnit` when a claim is approved.
-// Serial statuses: in_stock → sold → claim (defective, back at the shop) → returned (sent back to the supplier).
+// Serial statuses: in_stock → sold → claim (defective, back at the shop) → returned (sent back to the supplier); in_stock → scrapped (written off, stock-adjust.ts).
 
 type Staff = Pick<User, 'id' | 'name' | 'role'>;
 const norm = (s: string) => str(s).toUpperCase();
