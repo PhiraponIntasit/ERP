@@ -34,6 +34,11 @@ export function ClaimForm({ units, initial }: { units: Unit[]; initial: string }
         <textarea id="cl-problem" name="problem" className="input" rows={5} minLength={10} maxLength={1000} required
           defaultValue={st.values?.problem ?? ''} placeholder="เช่น เปิดเครื่องแล้วไม่ขึ้นภาพ พัดลมหมุนแต่ไม่มีสัญญาณออกจอ ลองเปลี่ยนสายแล้ว" />
       </div>
+      <div className="field">
+        <label htmlFor="cl-photos">แนบรูปประกอบ (ไม่บังคับ · สูงสุด 4 รูป)</label>
+        <input id="cl-photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+        <span className="muted" style={{ fontSize: 13 }}>เช่น รูปหน้าจอที่ขึ้น error หรือรอยเสียหาย ช่วยให้ช่างตรวจได้เร็วขึ้น</span>
+      </div>
       <Err msg={st.error ?? ''} />
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>หลังส่งเรื่อง ให้ส่งสินค้ามาที่ร้านพร้อมเขียนเลขที่เคลมหน้ากล่อง ร้านจะแจ้งผลทางอีเมล</p>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

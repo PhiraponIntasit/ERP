@@ -5,6 +5,7 @@ import { Fail, str } from './act';
 import { audit } from './auth';
 import { appUrl, sendMail } from './mail';
 import { lookupSerial, replaceUnit } from './warranty';
+import { CLAIM_SLA_DAYS } from './claim-service';
 import { pageOf } from '@/lib/paging';
 import { fmtD, fmtDT } from '@/lib/domain';
 import { SHOP } from '@/lib/shop';
@@ -19,6 +20,7 @@ export const CLAIM_ST: Record<string, [string, string]> = {
   submitted: ['รอส่งเครื่องให้ร้าน', 'tag-accent-2'],
   received: ['ร้านได้รับเครื่อง · กำลังตรวจสอบ', 'tag-accent'],
   replaced: ['เปลี่ยนเครื่องใหม่แล้ว', 'tag-neutral'],
+  repaired: ['ซ่อมเสร็จ · คืนเครื่องเดิม', 'tag-neutral'],
   rejected: ['ไม่อนุมัติ', 'tag-outline'],
   cancelled: ['ยกเลิกแล้ว', 'tag-outline'],
 };
@@ -107,31 +109,36 @@ function customerAudit(tx: Prisma.TransactionClient, me: Customer, action: strin
 
 // ── Back office ───────────────────────────────────────────────────────────────
 
-export const CLAIM_TABS = [['open', 'รอดำเนินการ'], ['submitted', 'รอรับเครื่อง'], ['received', 'กำลังตรวจสอบ'], ['replaced', 'เปลี่ยนแล้ว'], ['rejected', 'ไม่อนุมัติ'], ['all', 'ทั้งหมด']] as const;
+export const CLAIM_TABS = [['open', 'รอดำเนินการ'], ['mine', 'งานของฉัน'], ['submitted', 'รอรับเครื่อง'], ['received', 'กำลังตรวจสอบ'], ['replaced', 'เปลี่ยนแล้ว'], ['repaired', 'ซ่อมคืนแล้ว'], ['rejected', 'ไม่อนุมัติ'], ['all', 'ทั้งหมด']] as const;
 export type ClaimTab = (typeof CLAIM_TABS)[number][0];
 export const isClaimTab = (t: string | undefined): t is ClaimTab => CLAIM_TABS.some(x => x[0] === t);
-const tabWhere = (t: ClaimTab): Prisma.ClaimWhereInput => t === 'all' ? {} : t === 'open' ? { status: { in: OPEN_CLAIM } } : { status: t };
+const tabWhere = (t: ClaimTab, meId: string): Prisma.ClaimWhereInput =>
+  t === 'all' ? {} : t === 'open' ? { status: { in: OPEN_CLAIM } } : t === 'mine' ? { status: { in: OPEN_CLAIM }, assigneeId: meId } : { status: t };
 
-export async function claimPage(tab: ClaimTab, qIn: string, rawPage?: string) {
+export async function claimPage(tab: ClaimTab, qIn: string, rawPage?: string, meId = '') {
   const q = qIn.trim();
   const search: Prisma.ClaimWhereInput = q ? { OR: [
     { id: { contains: q, mode: 'insensitive' } }, { serial: { contains: q, mode: 'insensitive' } }, { orderId: { contains: q, mode: 'insensitive' } },
     { customer: { name: { contains: q, mode: 'insensitive' } } }, { customer: { email: { contains: q, mode: 'insensitive' } } },
   ] } : {};
-  const where = { AND: [search, tabWhere(tab)] };
-  const [total, grouped] = await Promise.all([db.claim.count({ where }), db.claim.groupBy({ by: ['status'], where: search, _count: true })]);
+  const where = { AND: [search, tabWhere(tab, meId)] };
+  const [total, grouped, mine] = await Promise.all([db.claim.count({ where }), db.claim.groupBy({ by: ['status'], where: search, _count: true }),
+    db.claim.count({ where: { AND: [search, tabWhere('mine', meId)] } })]);
   const n = (s: string) => grouped.find(g => g.status === s)?._count ?? 0;
-  const counts = Object.fromEntries(CLAIM_TABS.map(([t]) => [t, t === 'all' ? grouped.reduce((a, g) => a + g._count, 0) : t === 'open' ? n('submitted') + n('received') : n(t)])) as Record<ClaimTab, number>;
+  const counts = Object.fromEntries(CLAIM_TABS.map(([t]) => [t, t === 'all' ? grouped.reduce((a, g) => a + g._count, 0) : t === 'open' ? n('submitted') + n('received') : t === 'mine' ? mine : n(t)])) as Record<ClaimTab, number>;
   const page = pageOf(rawPage, total, 20);
   // Open claims: oldest first (work queue). Closed: newest first.
   const rows = await db.claim.findMany({
     where, skip: page.skip, take: page.size,
-    orderBy: tab === 'open' || tab === 'submitted' || tab === 'received' ? [{ createdAt: 'asc' }, { id: 'asc' }] : [{ createdAt: 'desc' }, { id: 'desc' }],
-    include: { customer: { select: { name: true } }, unit: { select: { item: { select: { name: true } } } } },
+    orderBy: tab === 'open' || tab === 'mine' || tab === 'submitted' || tab === 'received' ? [{ createdAt: 'asc' }, { id: 'asc' }] : [{ createdAt: 'desc' }, { id: 'desc' }],
+    include: { customer: { select: { name: true } }, unit: { select: { item: { select: { name: true } } } }, assignee: { select: { name: true } } },
   });
+  // Days since the shop received the unit, for claims still waiting on a decision (B: service level).
+  const age = (c: { status: string; receivedAt: Date | null }) => c.status === 'received' && c.receivedAt ? Math.floor((Date.now() - c.receivedAt.getTime()) / 864e5) : null;
   return {
     page, counts,
-    rows: rows.map(c => ({ id: c.id, createdText: fmtDT(c.createdAt), customer: c.customer.name, name: c.unit.item.name, serial: c.serial, problem: c.problem, statusLabel: stLabel(c.status), statusTag: stTag(c.status) })),
+    rows: rows.map(c => ({ id: c.id, createdText: fmtDT(c.createdAt), customer: c.customer.name, name: c.unit.item.name, serial: c.serial, problem: c.problem, statusLabel: stLabel(c.status), statusTag: stTag(c.status),
+      assignee: c.assignee?.name ?? '', ageDays: age(c), overdue: (age(c) ?? 0) >= CLAIM_SLA_DAYS })),
   };
 }
 

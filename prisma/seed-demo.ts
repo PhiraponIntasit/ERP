@@ -75,6 +75,15 @@ export async function seedDemo(db: PrismaClient) {
   await claim(db, { sale: b, sku: 'MB-GB-B760M', daysAgo: 4, status: 'received', problem: 'เปิดเครื่องไม่ติด ไฟ debug ที่บอร์ดค้างที่ DRAM ลองแรมอีกชุดแล้วยังเหมือนเดิม' });
   await claim(db, { sale: c, sku: 'MB-TUF-B650', daysAgo: 20, status: 'rejected', problem: 'ช่อง M.2 ช่องแรกไม่เจอ SSD',
     staffNote: 'ตรวจพบขาซ็อกเก็ต M.2 หักจากการติดตั้ง ไม่อยู่ในเงื่อนไขการรับประกัน ร้านซ่อมให้ได้โดยมีค่าใช้จ่าย' });
+  // The unit being checked is with technician สมชาย (u4), who has logged a finding for the customer and one internal note.
+  const checking = await db.claim.findFirstOrThrow({ where: { serial: b.sold['MB-GB-B760M'] } });
+  const day = (n: number, h: number) => new Date(Date.now() - n * DAY + h * 3600e3);
+  await db.claim.update({ where: { id: checking.id }, data: { assigneeId: 'u4' } });
+  await db.claimEvent.createMany({ data: [
+    { claimId: checking.id, t: day(2, 1), by: 'วิภาดา รุ่งเรือง', public: false, text: 'มอบหมายให้ สมชาย สายชล ตรวจสอบ' },
+    { claimId: checking.id, t: day(1, 2), by: 'สมชาย สายชล', public: true, text: 'ทดสอบกับ CPU และแรมของร้านแล้ว อาการเดิม ไฟ DRAM ค้าง · กำลังตรวจวงจรภาคจ่ายไฟแรม' },
+    { claimId: checking.id, t: day(1, 3), by: 'สมชาย สายชล', public: false, text: 'ภายใน: ถ้าซ่อมไม่ได้ภายใน 2 วัน ให้เปลี่ยนเครื่องจากสต็อก (มี 6 เครื่อง)' },
+  ] });
 
   // Saved PC builds (parts must exist in the seed catalogue).
   const builds: [string, Record<string, string>][] = [
