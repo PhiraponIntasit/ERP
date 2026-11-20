@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'เข้าสู่ระบบ ·
 export default async function CustomerLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const raw = (await searchParams).next;
   const next = typeof raw === 'string' ? raw : '';
-  const safe = next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/account/');
+  const safe = next.startsWith('/') && !next.startsWith('//') && !/^\/account\/(login|register)\b/.test(next);
   if (await getCustomer()) redirect(safe ? next : '/account');
   return <LoginForm next={next} />;
 }

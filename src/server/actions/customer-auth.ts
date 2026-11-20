@@ -20,7 +20,9 @@ function nextPath(raw: unknown): string {
   if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.length > 300) return '/';
   try {
     const u = new URL(raw, 'http://shop.invalid');
-    return u.origin === 'http://shop.invalid' && !u.pathname.startsWith('/account/') ? u.pathname + u.search : '/';
+    // never back to the sign-in / sign-up pages themselves (that would loop)
+    const auth = u.pathname === '/account/login' || u.pathname === '/account/register';
+    return u.origin === 'http://shop.invalid' && !auth ? u.pathname + u.search : '/';
   } catch {
     return '/';
   }
