@@ -12,7 +12,7 @@ let username = '', userId = '';
 test.describe.configure({ mode: 'serial' });
 test.beforeAll(async () => {
   username = `${P}${Date.now() % 1e6}`;
-  userId = (await db.user.create({ data: { username, name: NAME, role: 'employee', perms: ['ticket_new', 'my_tickets'], email: `${username}@e2e.test`, dept: 'HR', passwordHash: await bcrypt.hash(OLD, 10) } })).id;
+  userId = (await db.user.create({ data: { username, name: NAME, role: 'itsupport', perms: ['claims'], email: `${username}@e2e.test`, dept: 'HR', passwordHash: await bcrypt.hash(OLD, 10) } })).id;
 });
 test.afterAll(async () => {
   await db.user.deleteMany({ where: { username: { startsWith: P } } });   // reset rows cascade
@@ -75,7 +75,7 @@ test('reset link: validation, success, single use, signs out everywhere', async 
 
   await page.goto(link);
   await expect(page.getByText('ลิงก์ใช้ไม่ได้')).toBeVisible();          // single use
-  await signedIn.goto('/tickets/mine');
+  await signedIn.goto('/claims');
   await expect(signedIn).toHaveURL(/\/login/);                            // signed out everywhere
   await loginAs(signedIn, username, 'newpass456');
   await expect(signedIn).not.toHaveURL(/\/login/);

@@ -2,8 +2,8 @@ import 'server-only';
 import type { User } from '@prisma/client';
 import { db } from './db';
 import { can } from './auth';
-import { STRANDED } from './assignable';
-import { canDecide, OPEN, slaOf } from '@/lib/domain';
+import { canDecide } from '@/lib/domain';
+import { CLAIM_SLA_DAYS } from './claim-service';
 import { available } from './stock-reserve';
 
 /** SKUs that already have a PR in flight (pending, pending_exec or approved) — never suggest re-ordering these. */
@@ -25,16 +25,10 @@ export async function shellData(me: User) {
   const badges: Record<string, number> = {};
   const notifs: { text: string; sub: string; href: string }[] = [];
 
-  const [newCount, overdueN, strandedN, myAssigned, myOpenWork, low, pendingN, approvedMine, myResolved] = await Promise.all([
-    can(me, 'dispatch') ? db.ticket.count({ where: { status: 'new' } }) : 0,
-    can(me, 'dispatch') ? db.ticket.findMany({ where: { status: { in: OPEN } }, select: { created: true, urgency: true, status: true, resolvedAt: true } }).then(ts => ts.filter(t => slaOf(t).overdue).length) : 0,
-    can(me, 'dispatch') ? db.ticket.count({ where: STRANDED }) : 0,
-    can(me, 'tickets_work') ? db.ticket.count({ where: { assigneeId: me.id, status: 'assigned' } }) : 0,
-    can(me, 'tickets_work') ? db.ticket.count({ where: { status: { in: OPEN }, ...(isAdmin ? { assigneeId: { not: null } } : { assigneeId: me.id }) } }) : 0,
+  const [low, pendingN, approvedMine] = await Promise.all([
     can(me, 'inventory') ? lowStock() : null,
     can(me, 'approvals') ? db.purchaseRequest.findMany({ where: { status: { in: ['pending', 'pending_exec'] } }, select: { requesterId: true, status: true, approver1Id: true } }).then(ps => ps.filter(p => canDecide(p, me).ok).length) : 0,
     can(me, 'purchase') ? db.purchaseRequest.count({ where: { status: 'approved', ...(isAdmin ? {} : { requesterId: me.id }) } }) : 0,
-    can(me, 'my_tickets') ? db.ticket.count({ where: { requesterId: me.id, status: 'resolved' } }) : 0,
   ]);
   const [toPack, lateMoney] = can(me, 'orders') ? await Promise.all([
     db.order.count({ where: { status: 'paid' } }),
@@ -42,24 +36,24 @@ export async function shellData(me: User) {
   ]) : [0, 0];
   // Technicians see their own claim queue; everyone else with the menu sees all open claims.
   const tech = me.role === 'itsupport';
-  const [claimsNew, claimsHeld] = can(me, 'claims') ? await Promise.all([
+  const [claimsNew, claimsHeld, claimsOverdue, claimsUnassigned] = can(me, 'claims') ? await Promise.all([
     tech ? 0 : db.claim.count({ where: { status: 'submitted' } }),
     db.claim.count({ where: { status: 'received', ...(tech ? { assigneeId: me.id } : {}) } }),
-  ]) : [0, 0];
+    db.claim.count({ where: { status: 'received', receivedAt: { lt: new Date(Date.now() - CLAIM_SLA_DAYS * 864e5) }, ...(tech ? { assigneeId: me.id } : {}) } }),
+    tech ? 0 : db.claim.count({ where: { status: 'received', assigneeId: null } }),
+  ]) : [0, 0, 0, 0];
   const lowNoPR = low?.lowNoPR ?? [];
-  Object.assign(badges, { claims: claimsNew + claimsHeld, dispatch: newCount, tickets_work: myOpenWork, approvals: pendingN, inventory: lowNoPR.length, my_tickets: myResolved, purchase: approvedMine, orders: toPack + lateMoney });
+  Object.assign(badges, { claims: claimsNew + claimsHeld, approvals: pendingN, inventory: lowNoPR.length, purchase: approvedMine, orders: toPack + lateMoney });
 
-  if (newCount) notifs.push({ text: `คำร้องใหม่รอมอบหมาย ${newCount} งาน`, sub: 'ศูนย์มอบหมายงาน', href: '/dispatch' });
-  if (strandedN) notifs.push({ text: `งานค้างกับช่างที่รับงานไม่ได้แล้ว ${strandedN} งาน`, sub: 'บัญชีถูกระงับหรือถูกถอดสิทธิ์ — มอบหมายใหม่', href: '/dispatch' });
-  if (overdueN) notifs.push({ text: `งานเกิน SLA ${overdueN} งาน`, sub: 'เร่งรัดผู้รับผิดชอบหรือมอบหมายใหม่', href: '/dispatch' });
-  if (myAssigned) notifs.push({ text: `งานใหม่ที่ได้รับมอบหมาย ${myAssigned} งาน`, sub: 'งานที่ได้รับมอบหมาย', href: '/work' });
+  if (tech && claimsHeld) notifs.push({ text: `เคลมที่มอบหมายให้คุณ ${claimsHeld} เรื่อง`, sub: 'ตรวจเครื่องและบันทึกผล', href: '/claims?tab=mine' });
+  if (claimsUnassigned) notifs.push({ text: `เคลมที่รับเครื่องแล้วแต่ยังไม่มอบหมายช่าง ${claimsUnassigned} เรื่อง`, sub: 'เคลมสินค้า', href: '/claims?tab=received' });
+  if (claimsOverdue) notifs.push({ text: `เคลมเกินกำหนด ${CLAIM_SLA_DAYS} วัน ${claimsOverdue} เรื่อง`, sub: 'รับเครื่องมานานแล้วยังไม่มีผล', href: tech ? '/claims?tab=mine' : '/claims?tab=received' });
   if (lowNoPR.length) notifs.push({ text: `สินค้า ${lowNoPR.length} รายการต่ำกว่าจุดสั่งซื้อ`, sub: lowNoPR.map(i => i.name).join(', '), href: '/inventory' });
   if (pendingN) notifs.push({ text: `ใบขอซื้อรออนุมัติ ${pendingN} ใบ`, sub: 'อนุมัติการสั่งซื้อ', href: '/approvals' });
   if (approvedMine) notifs.push({ text: `ใบขอซื้อได้รับอนุมัติ ${approvedMine} ใบ`, sub: 'พร้อมออกใบสั่งซื้อ (PO) และรับเข้าคลัง', href: '/purchase' });
   if (toPack) notifs.push({ text: `คำสั่งซื้อชำระแล้ว รอแพ็ก ${toPack} รายการ`, sub: 'คำสั่งซื้อ & จัดส่ง', href: '/orders' });
   if (lateMoney) notifs.push({ text: `เงินเข้าหลังคำสั่งซื้อหมดเวลา ${lateMoney} รายการ`, sub: 'ต้องโอนคืนลูกค้า', href: '/orders?tab=refund' });
   if (claimsNew) notifs.push({ text: `เคลมใหม่จากลูกค้า ${claimsNew} รายการ`, sub: 'รอลูกค้าส่งเครื่อง — กด “รับเครื่องแล้ว” เมื่อได้รับ', href: '/claims?tab=submitted' });
-  if (claimsHeld) notifs.push({ text: `เครื่องเคลมรอตรวจสอบ ${claimsHeld} รายการ`, sub: 'เปลี่ยนเครื่องใหม่หรือไม่อนุมัติ', href: '/claims?tab=received' });
-  if (myResolved) notifs.push({ text: `งานซ่อมเสร็จแล้ว รอคุณยืนยัน ${myResolved} งาน`, sub: 'คำร้องของฉัน', href: '/tickets/mine' });
+  if (!tech && claimsHeld) notifs.push({ text: `เครื่องเคลมรอตรวจสอบ ${claimsHeld} รายการ`, sub: 'ซ่อมคืน เปลี่ยนเครื่องใหม่ หรือไม่อนุมัติ', href: '/claims?tab=received' });
   return { badges, notifs };
 }

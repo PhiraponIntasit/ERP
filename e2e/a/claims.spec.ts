@@ -160,7 +160,7 @@ test('who can open the claim pages', async ({ page }) => {
   await expect(page).toHaveURL(/\/account\/login\?next=(%2F|\/)account(%2F|\/)claims/);
   await page.goto('/claims');
   await expect(page).toHaveURL(/\/login/);
-  await loginAs(page, USERS.employee);
+  await loginAs(page, USERS.executive);
   await page.goto('/claims');
   await expect(page).not.toHaveURL(/\/claims/);
   for (const u of [USERS.storekeeper, USERS.manager, USERS.admin]) {

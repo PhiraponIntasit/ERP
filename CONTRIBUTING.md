@@ -6,17 +6,17 @@
 
 ### คน A: งานซ่อม และคน/อุปกรณ์
 
-**เมนู:** แจ้งปัญหา, คำร้องของฉัน, ศูนย์มอบหมายงาน, งานที่ได้รับมอบหมาย, ข้อมูลพนักงาน, ทะเบียนทรัพย์สิน, บัญชีผู้ใช้ & สิทธิ์, หน้า Login, ลืม/เปลี่ยนรหัสผ่าน, อีเมลแจ้งเตือน
+**เมนู:** ~~แจ้งปัญหา, คำร้องของฉัน, ศูนย์มอบหมายงาน, งานที่ได้รับมอบหมาย~~ (ปิดแล้ว — งานช่างย้ายไปอยู่ในระบบเคลม), ข้อมูลพนักงาน, ทะเบียนทรัพย์สิน, บัญชีผู้ใช้ & สิทธิ์, หน้า Login, ลืม/เปลี่ยนรหัสผ่าน, อีเมลแจ้งเตือน
 
 **ไฟล์หลัก:**
 
-- `src/app/(app)/tickets/`, `dispatch/`, `work/`, `users/`
+- `src/app/(app)/users/` (หน้า `tickets/`, `dispatch/`, `work/` ถูกลบเมื่อปิดระบบแจ้งซ่อม)
 - `src/app/login/`, `src/app/forgot-password/`, `src/app/reset-password/`
-- `src/server/actions/tickets.ts`, `people.ts`, `auth.ts`, `password-reset.ts`
-- `src/server/uploads.ts`, `password-reset.ts`, `mail.ts`, `notify.ts`
+- `src/server/actions/people.ts`, `auth.ts`, `password-reset.ts`
+- `src/server/uploads.ts`, `password-reset.ts`, `mail.ts`
 - `src/lib/password.ts` — กฎความยาวรหัสผ่าน
-- `src/app/api/files/`, `src/app/api/zxing-reader/`
-- `src/components/ticket-bits.tsx`, `change-password.tsx`, `category-icons.tsx`, `barcode-scanner.tsx`
+- `src/app/api/zxing-reader/`
+- `src/components/change-password.tsx`, `category-icons.tsx`, `barcode-scanner.tsx`
 - `e2e/a/`
 
 **เสร็จแล้ว:**

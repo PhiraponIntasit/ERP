@@ -12,8 +12,8 @@ const cases: [string, string, boolean][] = [
   [USERS.manager, '/dashboard', true],
   [USERS.manager, '/audit', true],
   [USERS.manager, '/inventory', false],
-  [USERS.employee, '/dashboard', false],
-  [USERS.employee, '/audit', false],
+  [USERS.itsupport, '/dashboard', false],
+  [USERS.itsupport, '/audit', false],
 ];
 
 for (const [user, path, allowed] of cases) {

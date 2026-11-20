@@ -85,7 +85,7 @@ test('unknown serial, and who may open the page', async ({ page }) => {
   await loginAs(page, USERS.storekeeper);
   await page.goto('/warranty?q=NO-SUCH-SERIAL');
   await expect(page.getByRole('status')).toContainText('ไม่พบ Serial NO-SUCH-SERIAL');
-  await loginAs(page, USERS.itsupport);
+  await loginAs(page, USERS.executive);
   await page.goto('/warranty');
   await expect(page).not.toHaveURL(/\/warranty/);
 });

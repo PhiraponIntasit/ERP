@@ -27,7 +27,7 @@ test('admin creates an account: 8-character minimum, unique username', async ({ 
   await dlg.getByRole('button', { name: 'สร้างบัญชี' }).click();
   await expect(dlg).toBeHidden();
   const u = await db.user.findUniqueOrThrow({ where: { username } });
-  expect([u.role, u.active]).toEqual(['employee', true]);
+  expect([u.role, u.active]).toEqual(['storekeeper', true]);
 });
 
 test('admin cannot remove their own user-management permission', async ({ browser }) => {
@@ -51,7 +51,7 @@ test('suspending an account signs it out immediately; re-enabling restores acces
   await row.getByRole('button', { name: 'ระงับ' }).click();
   await expect(row.getByRole('button', { name: 'เปิดใช้' })).toBeVisible(); // the "ระงับ" button text alone would match before the action finishes
 
-  await victim.goto('/tickets/mine');
+  await victim.goto('/claims');
   await expect(victim).toHaveURL(/\/login/);
   await victim.fill('#u', username); await victim.fill('#p', 'password123'); await victim.press('#p', 'Enter');
   await expect(victim.locator('form [role=alert]')).toContainText('ถูกระงับ');

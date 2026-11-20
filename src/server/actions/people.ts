@@ -3,9 +3,12 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { audit, requireAction } from '../auth';
 import { act, Fail, str } from '../act';
-import { activeWorkOf, canTakeWork } from '../assignable';
+
 import { passwordProblem } from '@/lib/password';
 import { ALL, isModule, isRole, MOD_LABEL, ROLE_LABEL, ROLE_PERMS } from '@/lib/domain';
+
+/** Open claims still assigned to someone (a technician who is suspended or loses the claims menu leaves them stranded). */
+const openClaimsOf = (userId: string) => db.claim.count({ where: { assigneeId: userId, status: { in: ['submitted', 'received'] } } });
 
 const CONTACT_F = { email: 'อีเมล', phone: 'โทร', dept: 'แผนก' } as const;
 type Contact = Record<keyof typeof CONTACT_F, string>;
@@ -23,7 +26,9 @@ export async function createUser(f: Record<string, string>) {
   return act(async () => {
     const me = await requireAction('users');
     const name = str(f.name), username = str(f.username).toLowerCase(), password = String(f.password ?? '');
-    const role = isRole(str(f.role)) ? str(f.role) as keyof typeof ROLE_PERMS : 'employee';
+    const roleIn = str(f.role);
+    if (!isRole(roleIn)) throw new Fail('เลือกบทบาท');
+    const role = roleIn;
     const contact = readContact(f);
     if (!name || !username) throw new Fail('กรอกชื่อและ Username');
     if (!/^[a-z0-9._-]{2,32}$/.test(username)) throw new Fail('Username ใช้ได้เฉพาะ a–z, 0–9, . _ - (2–32 ตัว)');
@@ -58,15 +63,15 @@ export async function savePerms(userId: string, roleIn: string, permsIn: string[
     for (const k of Object.keys(CONTACT_F) as (keyof Contact)[]) if (u[k] !== contact[k]) parts.push(`${CONTACT_F[k]} ${u[k] || '—'} → ${contact[k] || '—'}`);
     if (password) parts.push('รีเซ็ตรหัสผ่าน');
     const passwordHash = password ? await bcrypt.hash(password, 10) : undefined;
-    const losesWork = canTakeWork(u) && !canTakeWork({ ...u, role: roleIn, perms: np });
+    const losesWork = u.active && u.perms.includes('claims') && !np.includes('claims');
     await db.$transaction(async tx => {
       await tx.user.update({ where: { id: userId }, data: { role: roleIn, perms: np, ...contact, ...(passwordHash ? { passwordHash } : {}) } });
       // A reset password signs the person out everywhere (except the admin doing it on themselves).
       if (passwordHash && userId !== me.id) await tx.session.deleteMany({ where: { userId } });
       await audit(tx, me, 'user', 'แก้ไขสิทธิ์ผู้ใช้', u.username, parts.join(' · ') || 'ไม่มีการเปลี่ยนแปลง');
     });
-    const left = losesWork ? await activeWorkOf(userId) : 0;
-    return left ? `บันทึกสิทธิ์แล้ว — ${u.name} รับงานซ่อมไม่ได้แล้ว แต่ยังมีงานค้าง ${left} งาน ให้ IT Manager มอบหมายใหม่` : 'บันทึกสิทธิ์แล้ว';
+    const left = losesWork ? await openClaimsOf(userId) : 0;
+    return left ? `บันทึกสิทธิ์แล้ว — ${u.name} ไม่มีเมนูเคลมแล้ว แต่ยังมีเคลมที่มอบหมายค้าง ${left} เรื่อง ให้มอบหมายช่างใหม่` : 'บันทึกสิทธิ์แล้ว';
   });
 }
 
@@ -81,8 +86,8 @@ export async function toggleUserActive(userId: string) {
       if (u.active) await tx.session.deleteMany({ where: { userId } });
       await audit(tx, me, 'user', u.active ? 'ระงับบัญชี' : 'เปิดใช้บัญชี', u.username);
     });
-    const left = u.active ? await activeWorkOf(userId) : 0;
-    if (left) return `ระงับบัญชี ${u.username} แล้ว — ยังมีงานซ่อมค้าง ${left} งาน ให้ IT Manager มอบหมายใหม่`;
+    const left = u.active ? await openClaimsOf(userId) : 0;
+    if (left) return `ระงับบัญชี ${u.username} แล้ว — ยังมีเคลมที่มอบหมายค้าง ${left} เรื่อง ให้มอบหมายช่างใหม่`;
     return u.active ? `ระงับบัญชี ${u.username}` : `เปิดใช้บัญชี ${u.username}`;
   });
 }

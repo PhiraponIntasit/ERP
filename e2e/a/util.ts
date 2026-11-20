@@ -10,7 +10,7 @@ export async function as(browser: Browser, username: string, password = '1234'):
 }
 
 /** A throwaway account, so tests never touch the seeded demo users. Remove with dropUsers(). */
-export async function makeUser(username: string, password: string, role = 'employee', perms = ['ticket_new', 'my_tickets']) {
+export async function makeUser(username: string, password: string, role = 'itsupport', perms = ['claims', 'warranty', 'inventory']) {
   return db.user.create({ data: { username, name: 'ทดสอบ ' + username, role, perms, passwordHash: await bcrypt.hash(password, 10) } });
 }
 export const dropUsers = (prefix: string) => db.user.deleteMany({ where: { username: { startsWith: prefix } } });

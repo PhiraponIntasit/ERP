@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { loginAs, USERS } from '../helpers';
 
-// Asset-tag scanner with a live camera (Pixel 7 project). Chrome plays a generated Y4M file as the camera feed.
+// Barcode scanner with a live camera on the warranty lookup (Pixel 7 project). Chrome plays a generated Y4M file as the camera feed.
 // Headless Chromium on Linux has no native BarcodeDetector, so this exercises the ZXing WebAssembly fallback.
 
 // QR code for "MN-0050" (21×21 modules, # = dark), fed to Chrome as a fake camera.
@@ -29,18 +29,17 @@ test.use({
 });
 
 async function openScanner(page: Page) {
-  await loginAs(page, USERS.employee2);
-  await page.goto('/tickets/new');
-  await page.getByRole('button', { name: /สแกนบาร์โค้ด/ }).tap();
+  await loginAs(page, USERS.storekeeper);
+  await page.goto('/warranty');
+  await page.getByRole('button', { name: 'สแกน Serial' }).tap();
   return page.getByRole('dialog');
 }
 
-test('pointing the camera at a QR fills the asset tag', async ({ page }) => {
+test('pointing the camera at a QR looks up that serial', async ({ page }) => {
   const dlg = await openScanner(page);
   await expect(dlg.getByLabel('ภาพจากกล้อง')).toBeVisible();
   await expect(dlg).toBeHidden({ timeout: 15_000 });                 // closes by itself once it reads
-  await expect(page.locator('#nt-asset')).toHaveValue('MN-0050');
-  await expect(page.locator('.toast')).toContainText('สแกนได้: MN-0050');
+  await expect(page).toHaveURL(/\/warranty\?q=MN-0050$/);
   // camera is released when the scanner closes
   expect(await page.evaluate(() => [...document.querySelectorAll('video')].filter(v => (v.srcObject as MediaStream | null)?.active).length)).toBe(0);
 });

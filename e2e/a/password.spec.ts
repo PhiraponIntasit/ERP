@@ -29,9 +29,9 @@ test('change own password: validation, other devices signed out, new password wo
   await expect(dlg).toBeHidden();
   await expect(here.locator('.toast')).toContainText('เปลี่ยนรหัสผ่านแล้ว');
 
-  await here.goto('/tickets/mine');
-  await expect(here).toHaveURL(/\/tickets\/mine/);            // this device stays signed in
-  await elsewhere.goto('/tickets/mine');
+  await here.goto('/claims');
+  await expect(here).toHaveURL(/\/claims/);                   // this device stays signed in
+  await elsewhere.goto('/claims');
   await expect(elsewhere).toHaveURL(/\/login/);               // other devices are signed out
 
   const fresh = await (await browser.newContext()).newPage();

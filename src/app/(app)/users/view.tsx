@@ -23,12 +23,12 @@ export function UsersView({ users, meId }: { users: U[]; meId: string }) {
           <thead><tr><th>ผู้ใช้</th><th>Username</th><th>บทบาท</th><th>สิทธิ์ที่เข้าถึง</th><th>สถานะ</th><th className="r">จัดการ</th></tr></thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} style={{ opacity: u.active ? 1 : 0.55 }}>
+              <tr key={u.id} data-suspended={u.active ? undefined : 'true'} style={u.active ? undefined : { background: 'var(--color-neutral-100)' }}>
                 <td className={css.main}>{u.name}<div style={{ fontSize: 12, color: 'var(--color-neutral-700)' }}>{[u.dept, u.email].filter(Boolean).join(' · ') || 'ยังไม่มีข้อมูลติดต่อ'}</div></td>
                 <td data-label="Username" style={{ fontSize: 13 }}>{u.username}</td>
                 <td data-label="บทบาท"><span><span className="tag tag-outline">{u.roleLabel}</span>{u.custom && <span style={{ fontSize: 11, color: 'var(--color-accent-700)', marginLeft: 6 }}>ปรับรายบุคคล</span>}</span></td>
                 <td data-label="สิทธิ์" style={{ fontSize: 12, maxWidth: 320, color: 'var(--color-neutral-700)' }}>{u.perms.map(p => MOD_LABEL[p as Module] ?? p).join(', ')}</td>
-                <td className={css.side}><span className={`tag ${u.active ? 'tag-accent' : 'tag-neutral'}`}>{u.active ? 'ใช้งาน' : 'ระงับ'}</span></td>
+                <td className={css.side}><span className={`tag ${u.active ? 'tag-accent' : 'tag-outline'}`}>{u.active ? 'ใช้งาน' : 'ระงับ'}</span></td>
                 <td className={`r ${css.actions}`}><div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button className="btn btn-ghost" onClick={() => setDlg({ type: 'perms', u })}>กำหนดสิทธิ์</button>
                   {u.id !== meId && <button className="btn btn-ghost" style={{ color: 'var(--color-neutral-700)' }} disabled={pending} onClick={() => run(() => toggleUserActive(u.id))}>{u.active ? 'ระงับ' : 'เปิดใช้'}</button>}
@@ -56,7 +56,7 @@ export function UsersView({ users, meId }: { users: U[]; meId: string }) {
 }
 
 function NewUserDialog({ onClose }: { onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>({ role: 'employee', password: '', name: '', username: '', email: '', phone: '', dept: '' });
+  const [f, setF] = useState<Record<string, string>>({ role: 'storekeeper', password: '', name: '', username: '', email: '', phone: '', dept: '' });
   const { run, pending, error } = useAction();
   const set = (k: string, v: string) => setF(x => ({ ...x, [k]: v }));
   return (

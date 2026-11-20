@@ -120,7 +120,7 @@ test('categories and brands: add, protect spec slugs, delete only when empty', a
   expect(await db.category.count({ where: { slug: 'e2e-cat' } })).toBe(0);
 });
 
-for (const [user, allowed] of [[USERS.storekeeper, true], [USERS.admin, true], [USERS.itsupport, false], [USERS.employee, false]] as const) {
+for (const [user, allowed] of [[USERS.storekeeper, true], [USERS.admin, true], [USERS.itsupport, false], [USERS.executive, false]] as const) {
   test(`${user} ${allowed ? 'can' : 'cannot'} open product management`, async ({ page }) => {
     await loginAs(page, user);
     await page.goto('/products');

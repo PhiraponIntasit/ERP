@@ -20,8 +20,8 @@ test('a signed-out visitor returns to the page they opened, query included', asy
 test('a page the user may not open sends them to their own home page instead', async ({ page }) => {
   await page.goto('/users');
   await expect(page).toHaveURL(/\/login\?next=%2Fusers$/);
-  await signIn(page, USERS.employee);
-  await expect(page).toHaveURL(/\/tickets\/new$/);
+  await signIn(page, USERS.itsupport);
+  await expect(page).toHaveURL(/\/claims$/);   // a technician's home is their claim queue
 });
 
 test('never redirects to another site', async ({ page, baseURL }) => {
@@ -29,15 +29,15 @@ test('never redirects to another site', async ({ page, baseURL }) => {
   for (const next of ['//evil.example.com/purchase', 'https://evil.example.com/purchase', '/\\evil.example.com', 'javascript:alert(1)', '/purchase/../users']) {
     await page.context().clearCookies();
     await page.goto('/login?next=' + encodeURIComponent(next));
-    await signIn(page, USERS.employee);
+    await signIn(page, USERS.itsupport);
     expect(new URL(page.url()).host).toBe(host);
-    await expect(page).toHaveURL(/\/tickets\/new$/);
+    await expect(page).toHaveURL(/\/claims$/);
   }
 });
 
 test('already signed in: /login?next=… goes straight there', async ({ page }) => {
   await page.goto('/login');
-  await signIn(page, USERS.employee);
-  await page.goto('/login?next=' + encodeURIComponent('/tickets/mine'));
-  await expect(page).toHaveURL(/\/tickets\/mine$/);
+  await signIn(page, USERS.itsupport);
+  await page.goto('/login?next=' + encodeURIComponent('/claims?tab=mine'));
+  await expect(page).toHaveURL(/\/claims\?tab=mine$/);
 });
