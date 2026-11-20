@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DownloadIcon } from '@/components/icons';
 import { requirePage } from '@/server/auth';
 import { isPeriod, PERIODS, salesReport } from '@/server/sales';
 import { baht, bahtS, DISPLAY_TZ, fmt } from '@/lib/domain';
@@ -31,6 +32,11 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           {PERIODS.map(([key, label]) => <Link key={key} href={`/sales?p=${key}`} className={`chip${key === p ? ' on' : ''}`} style={{ textDecoration: 'none' }} aria-current={key === p ? 'page' : undefined}>{label}</Link>)}
         </nav>
         <span className="muted" style={{ fontSize: 13 }}>ตั้งแต่ {r.from.toLocaleDateString('th-TH', { timeZone: DISPLAY_TZ, day: 'numeric', month: 'short', year: '2-digit' })} ถึงวันนี้ · นับตามวันที่ลูกค้าชำระเงิน</span>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+          {/* plain links: the browser downloads the CSV; the route handler audits the export */}
+          <a className="btn btn-secondary" href={`/api/sales/export?p=${p}&kind=orders`} download><DownloadIcon /> CSV รายคำสั่งซื้อ</a>
+          <a className="btn btn-secondary" href={`/api/sales/export?p=${p}&kind=products`} download><DownloadIcon /> CSV รายสินค้า</a>
+        </div>
       </div>
 
       <div className="kpi-grid" data-testid="sales-kpis">
