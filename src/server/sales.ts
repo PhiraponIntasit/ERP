@@ -23,7 +23,7 @@ export function rangeOf(p: Period, now = new Date()) {
   return { from, to: now, keys: [...new Set(keys)] };
 }
 
-export async function salesReport(p: Period) {
+export async function salesReport(p: Period, topN = 10) {
   const { from, to, keys } = rangeOf(p);
   const [orders, refunds, placed] = await Promise.all([
     db.order.findMany({
@@ -67,8 +67,27 @@ export async function salesReport(p: Period) {
       conversion: paidN + lost ? paidN / (paidN + lost) : null, unpaidLost: lost,
     },
     daily: keys.map(k => ({ day: k, ...daily.get(k)! })),
-    top: [...prod.values()].sort((a, b) => b.sales - a.sales).slice(0, 10).map(x => ({ ...x, sales: r2(x.sales), profit: r2(x.profit) })),
+    top: [...prod.values()].sort((a, b) => b.sales - a.sales).slice(0, topN).map(x => ({ ...x, sales: r2(x.sales), profit: r2(x.profit) })),
     categories: [...cat.entries()].map(([name, sales]) => ({ name, sales: r2(sales) })).sort((a, b) => b.sales - a.sales),
     coupons: [...coupons.entries()].map(([code, c]) => ({ code, orders: c.orders, discount: r2(c.discount) })).sort((a, b) => b.discount - a.discount),
   };
+}
+
+/** One row per paid order in the period, for the accounts (CSV). Same rules as salesReport: totals include VAT,
+ *  gross profit = goods after discount ÷ 1.07 − cost at the time of sale; shipping is not product profit. */
+export async function salesOrderRows(p: Period) {
+  const { from, to } = rangeOf(p);
+  const orders = await db.order.findMany({
+    where: { status: { in: SOLD }, paidAt: { gte: from, lte: to } }, orderBy: [{ paidAt: 'asc' }, { id: 'asc' }],
+    select: { id: true, paidAt: true, status: true, subtotal: true, discount: true, couponCode: true, shippingFee: true, total: true,
+      customer: { select: { name: true, email: true } }, lines: { select: { qty: true, cost: true, item: { select: { cost: true } } } } },
+  });
+  return orders.map(o => {
+    const total = num(o.total), goods = num(o.subtotal) - num(o.discount);
+    const cost = o.lines.reduce((a, l) => a + num(l.cost ?? l.item.cost) * l.qty, 0);
+    const base = total / 1.07;
+    return { id: o.id, paidAt: o.paidAt!, status: o.status, customer: o.customer.name, email: o.customer.email, units: o.lines.reduce((a, l) => a + l.qty, 0),
+      subtotal: r2(num(o.subtotal)), discount: r2(num(o.discount)), coupon: o.couponCode ?? '', shipping: r2(num(o.shippingFee)), total: r2(total),
+      vatBase: r2(base), vat: r2(total - base), cost: r2(cost), profit: r2(goods / 1.07 - cost) };
+  });
 }

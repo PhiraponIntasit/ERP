@@ -5,12 +5,14 @@ import { AlertIcon } from '@/components/icons';
 import { Pager } from '@/components/pager';
 import type { Page } from '@/lib/paging';
 import { bahtS } from '@/lib/domain';
+import { AdjustDialog } from './adjust';
 
+const MOVE_LABEL: Record<string, string> = { in: 'รับเข้า', sale: 'ขาย', out: 'เบิกออก', adjust_in: 'ปรับยอดเพิ่ม', adjust_out: 'ปรับยอดลด' };
 type Move = { id: string; tText: string; name: string; type: string; qty: number; ref: string; by: string };
 
 export function InventoryView({ items, suppliers, moves, movesPage, manage, factor }: { items: InvItem[]; suppliers: SupplierOption[]; moves: Move[]; movesPage: Page; manage: boolean; factor: number }) {
   const [q, setQ] = useState('');
-  const [dlg, setDlg] = useState<null | { type: 'receive'; sku?: string } | { type: 'add' } | { type: 'pr' }>(null);
+  const [dlg, setDlg] = useState<null | { type: 'receive'; sku?: string } | { type: 'add' } | { type: 'pr' } | { type: 'adjust'; item: InvItem }>(null);
   const free = (i: InvItem) => i.qty - i.reserved;   // units not held for customers' unpaid orders
   const lowNoPR = items.filter(i => free(i) <= i.min && !i.inPR);
   const stockVal = items.reduce((a, i) => a + i.qty * i.cost, 0);
@@ -61,7 +63,10 @@ export function InventoryView({ items, suppliers, moves, movesPage, manage, fact
                   <td className="r tnum">{i.min}</td>
                   <td className="r tnum">{bahtS(i.cost)}</td>
                   <td><span className={`tag ${low ? (i.inPR ? 'tag-accent' : 'tag-outline') : 'tag-neutral'}`}>{out ? 'หมดสต็อก' : low ? (i.inPR ? 'ต่ำ · สั่งแล้ว' : 'ต่ำกว่าจุดสั่งซื้อ') : 'ปกติ'}</span></td>
-                  <td className="r">{manage && <button className="btn btn-ghost" onClick={() => setDlg({ type: 'receive', sku: i.sku })}>+ เพิ่ม</button>}</td>
+                  <td className="r nw">{manage && <>
+                    <button className="btn btn-ghost" onClick={() => setDlg({ type: 'receive', sku: i.sku })}>+ เพิ่ม</button>
+                    <button className="btn btn-ghost" onClick={() => setDlg({ type: 'adjust', item: i })}>ปรับยอด</button>
+                  </>}</td>
                 </tr>
               );
             })}
@@ -77,9 +82,9 @@ export function InventoryView({ items, suppliers, moves, movesPage, manage, fact
               {moves.map(m => (
                 <tr key={m.id}>
                   <td className="tnum" style={{ fontSize: 13 }}>{m.tText}</td>
-                  <td><span className={`tag ${m.type === 'in' ? 'tag-accent' : 'tag-neutral'}`}>{m.type === 'in' ? 'รับเข้า' : m.type === 'sale' ? 'ขาย' : 'เบิกออก'}</span></td>
+                  <td><span className={`tag ${m.type === 'in' || m.type === 'adjust_in' ? 'tag-accent' : m.type === 'adjust_out' ? 'tag-outline' : 'tag-neutral'}`}>{MOVE_LABEL[m.type] ?? 'เบิกออก'}</span></td>
                   <td>{m.name}</td>
-                  <td className="r tnum">{(m.type === 'in' ? '+' : '−') + m.qty}</td>
+                  <td className="r tnum">{(m.type === 'in' || m.type === 'adjust_in' ? '+' : '−') + m.qty}</td>
                   <td style={{ fontSize: 13 }}>{m.ref}</td>
                   <td style={{ fontSize: 13 }}>{m.by}</td>
                 </tr>
@@ -92,6 +97,7 @@ export function InventoryView({ items, suppliers, moves, movesPage, manage, fact
       </div>
       {dlg?.type === 'receive' && <ReceiveDialog items={items} sku={dlg.sku} onClose={close} />}
       {dlg?.type === 'add' && <AddItemDialog onClose={close} />}
+      {dlg?.type === 'adjust' && <AdjustDialog item={dlg.item} onClose={close} />}
       {dlg?.type === 'pr' && <PRDialog items={items} suppliers={suppliers} factor={factor} onClose={close} />}
     </div>
   );

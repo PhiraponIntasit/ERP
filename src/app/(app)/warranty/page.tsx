@@ -4,7 +4,7 @@ import { requirePage } from '@/server/auth';
 import { lookupSerial } from '@/server/warranty';
 import { WarrantyActions, SerialSearch } from './view';
 
-const ST: Record<string, [string, string]> = { in_stock: ['อยู่ในสต็อก', 'tag-neutral'], sold: ['ขายแล้ว', 'tag-accent'], claim: ['รับเคลม · รอส่งคืนผู้ขาย', 'tag-accent-2'], returned: ['ส่งคืนผู้ขายแล้ว', 'tag-outline'] };
+const ST: Record<string, [string, string]> = { in_stock: ['อยู่ในสต็อก', 'tag-neutral'], sold: ['ขายแล้ว', 'tag-accent'], claim: ['รับเคลม · รอส่งคืนผู้ขาย', 'tag-accent-2'], returned: ['ส่งคืนผู้ขายแล้ว', 'tag-outline'], scrapped: ['ตัดจำหน่ายแล้ว (ชำรุด/สูญหาย)', 'tag-outline'] };
 
 export default async function WarrantyPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requirePage('warranty');
