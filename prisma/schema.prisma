@@ -27,6 +27,7 @@ model User {
   passwordResets  PasswordReset[]
   ticketsOpened   Ticket[]          @relation("TicketRequester")
   ticketsAssigned Ticket[]          @relation("TicketAssignee")
+  claimsAssigned  Claim[]           @relation("ClaimAssignee")
   prsRequested    PurchaseRequest[] @relation("PRRequester")
   prsApproved1    PurchaseRequest[] @relation("PRApprover1")
   prsApproved     PurchaseRequest[] @relation("PRApprover")
@@ -88,6 +89,7 @@ model InventoryItem {
   cartItems      CartItem[]
   buildItems     PcBuildItem[]
   orderLines     OrderLine[]
+  claimParts     ClaimPart[]
 
   @@index([categoryId, active])
   @@index([brandId])
@@ -497,8 +499,11 @@ model Claim {
   order      Order        @relation(fields: [orderId], references: [id])
   /// What is wrong, in the customer's words
   problem    String
-  /// submitted | received | replaced | rejected | cancelled
+  /// submitted | received | replaced | repaired | rejected | cancelled
   status     String       @default("submitted")
+  /// Technician inspecting the unit (B: after-sales service)
+  assigneeId String?
+  assignee   User?        @relation("ClaimAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   /// Serial of the replacement unit, once replaced
   newSerial  String?
   /// Shop's note to the customer: rejection reason, or how the new unit is sent back
@@ -506,8 +511,57 @@ model Claim {
   createdAt  DateTime     @default(now())
   receivedAt DateTime?
   closedAt   DateTime?
+  events     ClaimEvent[]
+  images     ClaimImage[]
+  parts      ClaimPart[]
 
   @@index([customerId, createdAt])
   @@index([status, createdAt])
   @@index([serial])
+  @@index([assigneeId, status])
+}
+
+/// A step in a claim's service log: technician findings, progress, repair. `public` ones are shown to the customer.
+model ClaimEvent {
+  id      String       @id @default(cuid())
+  claimId String
+  claim   Claim        @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  t       DateTime     @default(now())
+  by      String
+  text    String
+  public  Boolean      @default(true)
+  images  ClaimImage[]
+
+  @@index([claimId, t])
+}
+
+/// Photos of a claimed unit: from the customer when filing, or from the technician (attached to an event).
+model ClaimImage {
+  id        String      @id @default(cuid())
+  claimId   String
+  claim     Claim       @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  eventId   String?
+  event     ClaimEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  /// customer | staff
+  kind      String
+  file      String
+  mime      String
+  name      String
+  size      Int
+  ord       Int
+  createdAt DateTime    @default(now())
+
+  @@index([claimId])
+}
+
+/// Spare parts taken from stock to repair a claimed unit (non-serial items; the stock move carries the claim id as ref).
+model ClaimPart {
+  claimId String
+  claim   Claim         @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  sku     String
+  item    InventoryItem @relation(fields: [sku], references: [sku])
+  name    String
+  qty     Int
+
+  @@id([claimId, sku])
 }

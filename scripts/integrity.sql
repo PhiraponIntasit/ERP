@@ -57,4 +57,14 @@ SELECT 'unit swapped for a claim that did not end replaced', a."target", x."id" 
 FROM "AuditLog" a
 JOIN LATERAL (SELECT substring(a."detail" from 'เคลม (CLM-[0-9A-Z-]+)') AS cid) m ON m.cid IS NOT NULL
 JOIN "Claim" x ON x."id" = m.cid   -- claims are never deleted by the app (only test clean-up removes them)
-WHERE a."cat" = 'warranty' AND a."action" = 'เปลี่ยนสินค้าตามประกัน' AND x."status" <> 'replaced';
+WHERE a."cat" = 'warranty' AND a."action" = 'เปลี่ยนสินค้าตามประกัน' AND x."status" <> 'replaced'
+UNION ALL
+-- 11. A repaired claim returned the customer's own unit: still sold, no replacement recorded
+SELECT 'repaired claim but the unit moved', c."id", c."serial" || ' is ' || s."status" || COALESCE(' · new ' || c."newSerial", '')
+FROM "Claim" c JOIN "SerialNumber" s ON s."serial" = c."serial"
+WHERE c."status" = 'repaired' AND (s."status" <> 'sold' OR c."newSerial" IS NOT NULL)
+UNION ALL
+-- 12. Spare parts on a claim = stock taken out with that claim as reference
+SELECT 'claim parts ≠ stock moves', p."claimId" || ' ' || p."sku", p."qty"::text || ' vs ' || COALESCE(SUM(m."qty"), 0)::text
+FROM "ClaimPart" p LEFT JOIN "StockMove" m ON m."ref" = p."claimId" AND m."sku" = p."sku" AND m."type" = 'out'
+GROUP BY p."claimId", p."sku", p."qty" HAVING p."qty" <> COALESCE(SUM(m."qty"), 0);
