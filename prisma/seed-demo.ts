@@ -5,6 +5,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 //   so "คำสั่งซื้อของฉัน" and "แจ้งเคลม" can be shown live, plus two saved PC builds.
 // · Three other customers' claims sit in the back office as submitted / received / rejected.
 // Sold units get their own serials (…-SN9001), so stock on the shelf and the integrity checks are unchanged.
+// Keep paid dates well inside 90 days of today and away from window edges: the sales report's 90-day view and its test count them.
 
 const DAY = 864e5;
 const CHIANG_MAI = '99/1 ถนนนิมมานเหมินท์ ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200';
@@ -68,7 +69,7 @@ export async function seedDemo(db: PrismaClient) {
   // Back-office claim queue: one waiting for the unit, one being checked, one rejected.
   const a = await sell(db, { customerId: 'cus-1', skus: ['VGA-ASUS-4070S'], paidDaysAgo: 30, status: 'completed', carrier: 'Kerry Express', address: BANGKOK });
   const b = await sell(db, { customerId: 'cus-3', skus: ['CPU-I5-14400F', 'MB-GB-B760M'], paidDaysAgo: 60, status: 'completed', carrier: 'ไปรษณีย์ไทย (EMS)', address: BANGKOK });
-  const c = await sell(db, { customerId: 'cus-2', skus: ['MB-TUF-B650'], paidDaysAgo: 90, status: 'completed', carrier: 'J&T Express', address: BANGKOK });
+  const c = await sell(db, { customerId: 'cus-2', skus: ['MB-TUF-B650'], paidDaysAgo: 75, status: 'completed', carrier: 'J&T Express', address: BANGKOK });
   await claim(db, { sale: a, sku: 'VGA-ASUS-4070S', daysAgo: 1, status: 'submitted', problem: 'เล่นเกมได้ประมาณ 10 นาทีแล้วจอดับ พัดลมการ์ดหมุนแรงมาก ลองถอดเสียบใหม่และเปลี่ยนสายไฟแล้ว' });
   await claim(db, { sale: b, sku: 'MB-GB-B760M', daysAgo: 4, status: 'received', problem: 'เปิดเครื่องไม่ติด ไฟ debug ที่บอร์ดค้างที่ DRAM ลองแรมอีกชุดแล้วยังเหมือนเดิม' });
   await claim(db, { sale: c, sku: 'MB-TUF-B650', daysAgo: 20, status: 'rejected', problem: 'ช่อง M.2 ช่องแรกไม่เจอ SSD',
