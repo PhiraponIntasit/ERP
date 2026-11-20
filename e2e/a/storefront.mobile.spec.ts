@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // Storefront on a phone (Pixel 7 project): nothing wider than the screen, filters scroll sideways,
 // two products per row, and the search box is a comfortable size.
 
-for (const path of ['/', '/shop', '/shop?cat=cpu', '/p/cpu-r5-7600', '/account/login', '/account/register']) {
+for (const path of ['/', '/shop', '/shop?cat=cpu', '/p/cpu-r5-7600', '/account/login', '/account/register', '/build', '/build?cpu=CPU-I5-14400F&mainboard=MB-TUF-B650&pick=ram']) {
   test(`${path} fits the screen`, async ({ page }) => {
     await page.goto(path);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);

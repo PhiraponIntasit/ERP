@@ -20,6 +20,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
           </form>
           <nav className={css.nav} aria-label="เมนูร้าน">
             <Link href="/shop" className={css.navLink}>สินค้าทั้งหมด</Link>
+            <Link href="/build" className={css.navLink}>จัดสเปคคอม</Link>
             {me
               ? <Link href="/account" className={css.navLink} title={me.email}>บัญชีของฉัน · {me.name.split(' ')[0]}</Link>
               : <Link href="/account/login" className={css.navLink}>เข้าสู่ระบบ</Link>}
