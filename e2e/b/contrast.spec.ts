@@ -53,7 +53,7 @@ function measure(): Hit[] {
   return out;
 }
 
-const PAGES = ['/dashboard', '/sales?p=90d', '/inventory', '/products', '/products/CPU-R5-7600', '/orders?tab=all', '/coupons',
+const PAGES = ['/dashboard', '/sales?p=90d', '/inventory', '/products', '/products/CPU-R5-7600', '/orders?tab=all', '/coupons', '/customers', '/customers/cus-demo',
   '/warranty?q=CPU-R5-7600-SN0001', '/purchase', '/purchase/suppliers', '/approvals', '/users', '/audit', '/dispatch', '/tickets/new',
   '/', '/shop', '/shop?cat=cpu', '/p/cpu-r5-7600', '/account/login', '/account/register', '/cart'];
 
