@@ -139,6 +139,8 @@
 @media (max-width: 860px) {
   .headIn { flex-wrap: wrap; gap: 10px; }
   .search { order: 3; flex-basis: 100%; max-width: none; }
+  /* menu gets its own row and scrolls sideways instead of pushing the page wider */
+  .nav { order: 2; flex-basis: 100%; margin: 0 -16px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
   /* 16px stops iOS Safari from zooming into a field on focus */
   .search :global(.input) { font-size: 16px; min-height: 44px; }
   .search :global(.btn) { min-height: 44px; }
@@ -176,6 +178,45 @@
   .price { font-size: 15px; }
 }
 
+/* ── PC builder ── */
+.builder { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.builder > * { min-width: 0; }
+.slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.slot { padding: 14px 16px; gap: 10px; }
+.slotErr { border-color: var(--color-danger); box-shadow: inset 3px 0 0 var(--color-danger); }
+.slotHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.slotHead h2 { margin: 0; font-size: 16px; }
+.slotPart { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.thumb { width: 56px; height: 56px; border-radius: var(--radius-md); background: var(--color-neutral-100) center / cover no-repeat; display: grid; place-items: center; overflow: hidden; font-size: 0; }
+.partText { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 14px; }
+.partText strong { overflow-wrap: anywhere; }
+.partSide { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.slotLinks { display: flex; gap: 12px; font-size: 14px; }
+.picker { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--color-divider); padding-top: 10px; }
+.cand { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px; border-radius: var(--radius-md); }
+.cand:hover { background: var(--color-neutral-100); }
+.candBad .partText strong { color: var(--color-text-2); }
+.why { font-size: 12px; color: var(--color-danger); font-weight: 500; }
+.summary { position: sticky; top: 76px; padding: 18px; gap: 12px; }
+.summary h2 { margin: 0; font-size: 17px; }
+.sumTotal { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.sumTotal strong { font-size: 22px; }
+.issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.issues li { padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-neutral-100); }
+.issueErr { color: var(--color-danger); font-weight: 500; }
+.okBox { padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-accent-100); color: var(--color-accent-800); font-size: 13px; font-weight: 500; }
+.sumActions { display: flex; flex-direction: column; gap: 8px; }
+.saveRow { display: flex; gap: 6px; }
+.saveRow input { flex: 1; min-width: 0; }
+@media (max-width: 860px) {
+  .builder { grid-template-columns: minmax(0, 1fr); }
+  .summary { position: static; }
+}
+@media (max-width: 520px) {
+  .slotPart, .cand { grid-template-columns: 44px minmax(0, 1fr); }
+  .thumb { width: 44px; height: 44px; }
+  .partSide { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+}
 /* ── Claims (account) ── */
 .units { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .unit { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; }

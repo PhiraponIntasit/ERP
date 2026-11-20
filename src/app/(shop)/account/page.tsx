@@ -55,6 +55,13 @@ export default async function AccountPage() {
                 {a.line1} ต.{a.subdistrict} อ.{a.district} จ.{a.province} {a.postcode}</li>))}</ul>
           : <p className="muted" style={{ margin: 0 }}>ยังไม่มีที่อยู่ — ระบบจะบันทึกให้ตอนสั่งซื้อครั้งแรก</p>}
       </section>
+      <section className="card" aria-labelledby="build-h">
+        <div className={css.orderHead}>
+          <h2 id="build-h" className={css.cardH}>สเปคคอมที่บันทึกไว้</h2>
+          <Link href="/account/builds" style={{ marginLeft: 'auto', fontSize: 14 }}>ดูสเปคที่บันทึกไว้</Link>
+        </div>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>จัดสเปคที่ <Link href="/build">จัดสเปคคอม</Link> แล้วกดบันทึก กลับมาเปิดหรือใส่ตะกร้าทีหลังได้</p>
+      </section>
     </div>
   );
 }

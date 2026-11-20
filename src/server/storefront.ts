@@ -21,10 +21,10 @@ export function readShopFilter(sp: { q?: string; cat?: string; brand?: string; s
   return { q: clean(sp.q), cat: clean(sp.cat, 40), brand: clean(sp.brand, 40), sort, inStock: sp.stock === '1' };
 }
 
-const cardInclude = { brand: true, category: true, images: { orderBy: { ord: 'asc' }, take: 1 } } satisfies Prisma.InventoryItemInclude;
+export const cardInclude = { brand: true, category: true, images: { orderBy: { ord: 'asc' }, take: 1 } } satisfies Prisma.InventoryItemInclude;
 type CardRow = Prisma.InventoryItemGetPayload<{ include: typeof cardInclude }>;
 
-function cardOf(i: CardRow) {
+export function cardOf(i: CardRow) {
   return {
     sku: i.sku, slug: i.slug ?? i.sku.toLowerCase(), name: i.name,
     brand: i.brand?.name ?? '', category: i.category?.name ?? i.cat, categorySlug: i.category?.slug ?? '',
