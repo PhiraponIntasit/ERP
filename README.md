@@ -1,6 +1,6 @@
 # IT Products Store Management System
 
-IT products store management: Inventory (stock, reorder points), Procurement (PR → approval → PO → goods receipt), Helpdesk (repair tickets that draw parts from stock), user accounts with per-person permissions, and an append-only Audit Log.
+IT products store management: the COREPICK storefront (catalogue, cart, PC builder, PromptPay checkout, customer accounts and warranty claims) and its back office — orders & fulfilment, Inventory (stock, reorder points, adjustments), Procurement (PR → approval → PO → goods receipt), after-sales service (claims with technicians, repair or replacement), coupons, sales reports, user accounts with per-person permissions, and an append-only Audit Log.
 
 **Stack:** Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · Prisma 6 · PostgreSQL. UI uses the *Classical* design system (`src/app/classical.css`) with theme overrides (blue accent in light mode, gold on warm black in dark mode).
 
@@ -18,7 +18,7 @@ npm run dev                     # http://localhost:3000
 
 Production on Vercel: see [docs/DEPLOY.md](docs/DEPLOY.md). Self-hosted: `npm run build && npm start`. Serve over HTTPS (session cookies are `Secure` in production; see `COOKIE_SECURE`).
 
-Demo accounts: `admin`, `manager`, `executive`, `itmanager`, `somchai`, `pakorn` (IT Support), `wiphada` (Store Keeper), `surachai`, `natthida` (Employee). **Set `SHOW_DEMO_ACCOUNTS=false` in production** and change the seeded passwords (or don't seed).
+Demo accounts: `admin`, `manager`, `executive`, `wiphada` (Store Keeper), `itmanager` (หัวหน้าช่าง), `somchai`, `pakorn` (ช่างเทคนิค); storefront customer `customer@example.com`. (`surachai`, `natthida` were helpdesk requesters and are suspended.) **Set `SHOW_DEMO_ACCOUNTS=false` in production** and change the seeded passwords (or don't seed).
 
 To start over with fresh sample data, point `DATABASE_URL` at a new empty database and run `migrate deploy` + `db:seed`, or use `npm run db:reset` on a development database (this drops all data).
 
@@ -47,22 +47,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for who owns which menu, shared files, an
 ```
 prisma/schema.prisma          data model; migrations/…_init adds audit-log + stock CHECK constraints
 prisma/seed.ts                sample data
-src/lib/domain.ts             roles, default permissions (RBAC), statuses, SLA, approval rules, formatting
+src/lib/domain.ts             roles, default permissions (RBAC), statuses, approval rules, formatting
 src/server/auth.ts            sessions (hashed tokens), permission guards, audit()
 src/server/actions/*.ts       every mutation — permission-checked, transactional, audited
 src/server/queries.ts         nav badges + bell notifications
 src/app/(app)/<module>/       one route per menu item (page.tsx = server data, view.tsx = client UI)
-src/app/api/files/[id]        authenticated ticket-photo download
+src/app/api/claims/images/[id] claim photos (staff with the claims menu, or the customer who owns the claim)
 src/app/api/audit             audit-log CSV export
 ```
 
 | Menu | Route | Default roles |
 |---|---|---|
 | แดชบอร์ดภาพรวม | `/dashboard` | Manager, Executive, Admin |
-| แจ้งปัญหา / คำร้องของฉัน | `/tickets/new`, `/tickets/mine` | everyone |
-| ศูนย์มอบหมายงาน | `/dispatch` | IT Manager, Admin |
-| งานที่ได้รับมอบหมาย | `/work` | IT Support, Admin |
-| คลังสินค้า | `/inventory` | Store Keeper, IT Support (view only), Admin |
+| คลังสินค้า | `/inventory` | Store Keeper, Admin (ช่างเทคนิค / หัวหน้าช่าง view only) |
+| คำสั่งซื้อ & จัดส่ง | `/orders` | Store Keeper, Manager, Admin |
+| คูปองส่วนลด · รายงานยอดขาย | `/coupons` · `/sales` | Manager, Admin (รายงาน: + Executive) |
+| ตรวจประกัน · เคลมสินค้า | `/warranty` · `/claims` | Store Keeper, Manager, ช่างเทคนิค, หัวหน้าช่าง, Admin |
+| ลูกค้า | `/customers` | Manager, Admin |
 | สินค้า & ราคาขาย | `/products` | Store Keeper, Admin |
 | ใบขอซื้อ / ใบสั่งซื้อ | `/purchase` | Store Keeper, Admin |
 | อนุมัติการสั่งซื้อ | `/approvals` | Manager, Executive, Admin |
@@ -73,8 +74,8 @@ Admins can add or remove modules per person on top of the role defaults.
 
 ## Business rules (as designed)
 
-- **Tickets:** new → assigned → in progress / waiting for parts → resolved → requester confirms with a 1–5★ rating (or "ยังไม่หาย" sends it back). SLA: critical 4 h, high 8 h, medium 24 h, low 72 h.
-- **Parts withdrawal** decrements stock immediately (never below zero, even under concurrent requests), records it on the ticket, and alerts when at/below the reorder point.
+- **Claims (after-sales):** the customer files on a unit they bought (with photos) → the shop receives it and assigns a technician → the technician logs findings (for the customer or internal, with photos) → repair & return (spare parts leave stock), replace from stock, or reject. More than 7 days after receipt without a decision is flagged overdue. The old internal IT helpdesk was retired; its tickets stay in the database as history.
+- **Stock** never goes below zero or below units reserved for unpaid orders, even under concurrent requests; write-offs and counts need a reason and are audited.
 - **Procurement:** PR → Manager approval (if total incl. VAT > `APPROVAL_LIMIT`, then a *different* Executive) → PO printable as PDF → "รับเข้าคลัง" adds stock. Requesters can't approve their own PR. Items with an open PR aren't suggested again.
 - **Staff contacts:** each account keeps its work email (notifications, password reset), phone (shown to technicians) and department, edited on บัญชีผู้ใช้ & สิทธิ์.
 - **Audit log:** every change, login (including failures) and CSV export is recorded with before → after detail. A database trigger rejects UPDATE/DELETE/TRUNCATE on `AuditLog`.

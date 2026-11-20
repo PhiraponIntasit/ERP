@@ -7,6 +7,7 @@ import { put, get, del } from '@vercel/blob';
 /** On Vercel the filesystem is read-only, so photos go to a private Vercel Blob store when one is connected; otherwise to UPLOAD_DIR.
  *  Newer stores connect with BLOB_STORE_ID (+ Vercel's OIDC token, which @vercel/blob picks up itself); older ones with BLOB_READ_WRITE_TOKEN. */
 const BLOB = !!(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
+// Prefix kept from the retired helpdesk so photos already stored stay reachable; claim and product photos use it too.
 const blobPath = (file: string) => `tickets/${file}`;
 const DIR = path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR || './storage/uploads');
 export const MAX_IMAGES = 6;

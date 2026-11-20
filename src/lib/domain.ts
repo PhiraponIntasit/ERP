@@ -1,8 +1,7 @@
 // Domain constants & pure helpers shared by server and client.
 
 export const MODULES = [
-  ['dashboard', 'แดชบอร์ดภาพรวม'], ['ticket_new', 'แจ้งปัญหา'], ['my_tickets', 'คำร้องของฉัน'],
-  ['dispatch', 'ศูนย์มอบหมายงาน'], ['tickets_work', 'งานที่ได้รับมอบหมาย'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปองส่วนลด'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
+  ['dashboard', 'แดชบอร์ดภาพรวม'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปองส่วนลด'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
   ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
@@ -12,65 +11,41 @@ export const ALL: Module[] = MODULES.map(m => m[0]);
 export const isModule = (m: string): m is Module => (ALL as string[]).includes(m);
 
 export const MOD_PATH: Record<Module, string> = {
-  dashboard: '/dashboard', ticket_new: '/tickets/new', my_tickets: '/tickets/mine', dispatch: '/dispatch',
-  tickets_work: '/work', inventory: '/inventory', products: '/products', orders: '/orders', coupons: '/coupons', warranty: '/warranty', claims: '/claims', customers: '/customers', sales: '/sales', purchase: '/purchase', approvals: '/approvals',
+  dashboard: '/dashboard', inventory: '/inventory', products: '/products', orders: '/orders', coupons: '/coupons', warranty: '/warranty', claims: '/claims', customers: '/customers', sales: '/sales', purchase: '/purchase', approvals: '/approvals',
   users: '/users', audit: '/audit',
 };
 
 export const HDR: Record<Module, [string, string]> = {
-  dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], ticket_new: ['Helpdesk', 'แจ้งปัญหา / ขอรับบริการ'],
-  my_tickets: ['Helpdesk', 'คำร้องของฉัน'], dispatch: ['IT Management', 'ศูนย์มอบหมายงานซ่อม'],
-  tickets_work: ['IT Support', 'งานที่ได้รับมอบหมาย'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
+  dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
   products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด'], warranty: ['After-sales', 'ตรวจประกันและเปลี่ยนสินค้าตาม Serial'], claims: ['After-sales', 'เคลมสินค้าจากลูกค้า'], customers: ['CRM', 'บัญชีลูกค้าหน้าร้าน'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
   users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };
 
+// Role keys `itsupport` / `itmanager` are kept from the old helpdesk so existing accounts stay valid; they are now the
+// shop's technicians. `employee` (helpdesk requesters) is retired: those accounts are suspended and it can't be assigned.
 export const ROLES = [
-  ['employee', 'Employee'], ['storekeeper', 'Store Keeper'], ['itsupport', 'IT Support'], ['itmanager', 'IT Manager'],
+  ['storekeeper', 'Store Keeper'], ['itsupport', 'ช่างเทคนิค'], ['itmanager', 'หัวหน้าช่าง'],
   ['manager', 'Manager'], ['executive', 'Executive'], ['admin', 'Admin'],
 ] as const;
 export type Role = (typeof ROLES)[number][0];
-export const ROLE_LABEL = Object.fromEntries(ROLES) as Record<Role, string>;
+export const ROLE_LABEL = Object.fromEntries([...ROLES, ['employee', 'พนักงานทั่วไป (ปิดใช้งานแล้ว)']]) as Record<Role | 'employee', string>;
 export const isRole = (r: string): r is Role => ROLES.some(x => x[0] === r);
 
 export const ROLE_PERMS: Record<Role, Module[]> = {
-  employee: ['ticket_new', 'my_tickets'],
-  storekeeper: ['ticket_new', 'my_tickets', 'inventory', 'products', 'orders', 'warranty', 'claims', 'purchase'],
-  itsupport: ['ticket_new', 'my_tickets', 'tickets_work', 'inventory', 'claims'],
-  itmanager: ['ticket_new', 'my_tickets', 'dispatch', 'claims'],
-  manager: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'orders', 'coupons', 'warranty', 'claims', 'customers', 'approvals', 'audit'],
-  executive: ['dashboard', 'sales', 'ticket_new', 'my_tickets', 'approvals', 'audit'],
+  storekeeper: ['inventory', 'products', 'orders', 'warranty', 'claims', 'purchase'],
+  itsupport: ['claims', 'warranty', 'inventory'],
+  itmanager: ['claims', 'warranty', 'inventory'],
+  manager: ['dashboard', 'sales', 'orders', 'coupons', 'warranty', 'claims', 'customers', 'approvals', 'audit'],
+  executive: ['dashboard', 'sales', 'approvals', 'audit'],
   admin: ALL,
 };
 
-export const SLA_H: Record<string, number> = { critical: 4, high: 8, medium: 24, low: 72 };
 export const AUDIT_CATS: Record<string, string> = {
   auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน', coupon: 'คูปอง', warranty: 'ประกัน & เคลม', customer: 'ลูกค้า',
   employee: 'พนักงาน', asset: 'ทรัพย์สิน', // older records only: the employee & asset registers were removed
   system: 'ระบบ',
 };
-
-export const CATS = [
-  ['laptop', 'โน้ตบุ๊ก / PC'], ['monitor', 'จอภาพ'], ['network', 'Network / Wi-Fi'],
-  ['printer', 'เครื่องพิมพ์'], ['software', 'ซอฟต์แวร์ / สิทธิ์'], ['peripheral', 'อุปกรณ์ต่อพ่วง'],
-] as const;
-export const CAT_LABEL: Record<string, string> = Object.fromEntries(CATS);
-
-/** [label, tag class, sort weight] */
-export const URG: Record<string, [string, string, number]> = {
-  low: ['ต่ำ', 'tag-neutral', 0], medium: ['ปานกลาง', 'tag-accent-2', 1], high: ['สูง', 'tag-accent', 2], critical: ['วิกฤต', 'tag-outline', 3],
-};
-export const URG_KEYS = ['low', 'medium', 'high', 'critical'] as const;
-
-export const ST: Record<string, [string, string]> = {
-  new: ['รอมอบหมาย', 'tag-outline'], assigned: ['มอบหมายแล้ว', 'tag-accent'], progress: ['กำลังดำเนินการ', 'tag-accent'],
-  waiting: ['รออะไหล่', 'tag-accent-2'], resolved: ['แก้ไขเสร็จ · รอยืนยัน', 'tag-neutral'], closed: ['ปิดงาน', 'tag-neutral'],
-};
-export const STEPS = [['new', 'แจ้งปัญหา'], ['assigned', 'มอบหมาย'], ['progress', 'ดำเนินการ'], ['resolved', 'แก้ไขเสร็จ'], ['closed', 'ปิดงาน']] as const;
-export const STEP_IDX: Record<string, number> = { new: 0, assigned: 1, progress: 2, waiting: 2, resolved: 3, closed: 4 };
-export const OPEN = ['new', 'assigned', 'progress', 'waiting'];
-export const WORK_STATUSES = ['assigned', 'progress', 'waiting', 'resolved'] as const;
 
 export const PRST: Record<string, [string, string]> = {
   pending: ['รอ Manager อนุมัติ', 'tag-outline'], pending_exec: ['รอผู้บริหารอนุมัติ', 'tag-outline'],
@@ -94,26 +69,6 @@ export const fmtD = (d: D) => toDate(d).toLocaleDateString('th-TH', { timeZone: 
 export const dayKey = (d: D) => toDate(d).toLocaleDateString('en-CA', { timeZone: DISPLAY_TZ });
 
 // ── SLA ──────────────────────────────────────────────────────────────────────
-export type Sla = { slaText: string; slaTag: string; slaMet?: boolean; overdue: boolean };
-export function slaOf(t: { created: Date; urgency: string; status: string; resolvedAt: Date | null }, nowMs = Date.now()): Sla {
-  const due = t.created.getTime() + SLA_H[t.urgency] * 36e5;
-  const done = t.status === 'resolved' || t.status === 'closed';
-  const dur = (ms: number) => { const hh = Math.abs(ms) / 36e5; return hh < 1 ? Math.max(1, Math.round(hh * 60)) + ' นาที' : hh < 48 ? Math.round(hh) + ' ชม.' : Math.round(hh / 24) + ' วัน'; };
-  if (done) { const met = !t.resolvedAt || t.resolvedAt.getTime() <= due; return { slaText: met ? 'ทัน SLA' : 'เกิน SLA', slaTag: 'tag-neutral', slaMet: met, overdue: false }; }
-  const left = due - nowMs;
-  return left < 0
-    ? { slaText: 'เกิน SLA ' + dur(left), slaTag: 'tag-outline', overdue: true }
-    : { slaText: 'SLA เหลือ ' + dur(left), slaTag: left < 2 * 36e5 ? 'tag-accent' : 'tag-neutral', overdue: false };
-}
-
-/** Sort: open first, then urgency, then newest */
-export function sortTickets<T extends { status: string; urgency: string; created: Date }>(arr: T[]): T[] {
-  return [...arr].sort((a, b) =>
-    (Number(OPEN.includes(b.status)) - Number(OPEN.includes(a.status))) ||
-    (URG[b.urgency][2] - URG[a.urgency][2]) ||
-    (b.created.getTime() - a.created.getTime()));
-}
-
 export const config = {
   approvalLimit: () => Number(process.env.APPROVAL_LIMIT ?? 50000) || 50000,
   reorderFactor: () => Math.min(6, Math.max(1, Number(process.env.REORDER_FACTOR ?? 3) || 3)),

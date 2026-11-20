@@ -162,7 +162,7 @@ test('the menu badge counts orders waiting to be packed', async ({ browser, page
   await expect(sk.getByRole('link', { name: /คำสั่งซื้อ & จัดส่ง/ })).toContainText(String(n));
 });
 
-for (const [user, allowed] of [[USERS.storekeeper, true], [USERS.manager, true], [USERS.admin, true], [USERS.itsupport, false], [USERS.employee, false]] as const) {
+for (const [user, allowed] of [[USERS.storekeeper, true], [USERS.manager, true], [USERS.admin, true], [USERS.itsupport, false], [USERS.executive, false]] as const) {
   test(`${user} ${allowed ? 'can' : 'cannot'} open orders`, async ({ page }) => {
     await loginAs(page, user);
     await page.goto('/orders');

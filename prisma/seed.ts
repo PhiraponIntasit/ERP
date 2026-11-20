@@ -38,9 +38,11 @@ async function main() {
     { id: 'EMP-0131', name: 'สุรชัย ทองดี', position: 'Accountant', dept: 'Finance', phone: '082-444-5566', email: 'surachai.t@corepick.co.th' },
     { id: 'EMP-0144', name: 'ณัฐธิดา แก้วใส', position: 'HR Officer', dept: 'HR', phone: '083-111-9090', email: 'natthida.k@corepick.co.th' },
   ];
-  const U = (id: string, username: string, name: string, role: Role, contactId: string) => {
+  // `employee` accounts (requesters of the retired helpdesk) are kept for history but suspended, with no menus.
+  const U = (id: string, username: string, name: string, role: Role | 'employee', contactId: string) => {
     const c = contacts.find(x => x.id === contactId)!;
-    return { id, username, passwordHash: hash, name, role, email: c.email, phone: c.phone, dept: c.dept, active: true, perms: [...ROLE_PERMS[role]] };
+    const live = role !== 'employee';
+    return { id, username, passwordHash: hash, name, role, email: c.email, phone: c.phone, dept: c.dept, active: live, perms: live ? [...ROLE_PERMS[role]] : [] };
   };
 
   const users = [
@@ -72,20 +74,6 @@ async function main() {
   await seedSales(db, hash);
   await seedDemo(db);
 
-  const h = (t: Date, text: string, by: string) => ({ t, text, by });
-  const tickets = [
-    { id: 'TCK-1049', title: 'Wi-Fi ชั้น 4 หลุดทั้งฟลอร์ ใช้งานอินเทอร์เน็ตไม่ได้', cat: 'network', urgency: 'critical', assetTag: 'AP-FL04-B', desc: 'Access Point ฝั่งทิศตะวันออกไม่ปล่อยสัญญาณตั้งแต่ 9 โมง กระทบฝ่ายการตลาดประมาณ 28 คน', requesterId: 'u6', created: daysAgo(0, 9, 12), status: 'new', parts: [], history: [h(daysAgo(0, 9, 12), 'เปิดคำร้อง', 'วิภาดา รุ่งเรือง')] },
-    { id: 'TCK-1047', title: 'เครื่องพิมพ์ชั้น 3 หมึกจาง พิมพ์เป็นเส้น', cat: 'printer', urgency: 'medium', assetTag: 'PR-0310', desc: 'พิมพ์เอกสารออกมาเป็นเส้นขาวกลางหน้า ลองเขย่าตลับหมึกแล้วยังไม่ดีขึ้น', requesterId: 'u7', created: daysAgo(1, 14, 30), status: 'new', parts: [], history: [h(daysAgo(1, 14, 30), 'เปิดคำร้อง', 'สุรชัย ทองดี')] },
-    { id: 'TCK-1042', title: 'โน้ตบุ๊ก HP จอฟ้า เปิดไม่ติด ขึ้นรหัสสต็อปโค้ด', cat: 'laptop', urgency: 'high', assetTag: 'NB-0102', desc: 'Blue Screen KERNEL_DATA_INPAGE_ERROR ระหว่างเปิดไฟล์บัญชี สงสัยว่า SSD เสีย', requesterId: 'u7', created: daysAgo(3, 10, 5), status: 'progress', assigneeId: 'u4', parts: [{ sku: 'SSD-1TB', name: 'Samsung 980 Pro 1TB NVMe', qty: 1 }], history: [h(daysAgo(3, 10, 5), 'เปิดคำร้อง', 'สุรชัย ทองดี'), h(daysAgo(3, 10, 40), 'มอบหมายให้ สมชาย สายชล', 'ธนภัทร เจริญสุข'), h(daysAgo(2, 11, 0), 'เบิก Samsung 980 Pro 1TB NVMe × 1 จากคลัง', 'สมชาย สายชล'), h(daysAgo(2, 11, 5), 'อัปเดตสถานะ: กำลังดำเนินการ — ติดตั้ง SSD ใหม่ กำลังกู้ข้อมูล', 'สมชาย สายชล')] },
-    { id: 'TCK-1038', title: 'แบตเตอรี่ ThinkPad บวม ดันทัชแพด', cat: 'laptop', urgency: 'high', assetTag: 'NB-0120', desc: 'ตัวเครื่องโก่ง ทัชแพดกดไม่ลง ต้องเปลี่ยนแบตเตอรี่', requesterId: 'u6', created: daysAgo(5, 9, 30), status: 'waiting', assigneeId: 'u5', parts: [], history: [h(daysAgo(5, 9, 30), 'เปิดคำร้อง', 'วิภาดา รุ่งเรือง'), h(daysAgo(5, 10, 0), 'มอบหมายให้ ปกรณ์ มีสุข', 'ธนภัทร เจริญสุข'), h(daysAgo(4, 13, 0), 'อัปเดตสถานะ: รออะไหล่ — แบตรุ่นนี้ต้องสั่งเพิ่ม', 'ปกรณ์ มีสุข')] },
-    { id: 'TCK-1031', title: 'ขอสิทธิ์ใช้งาน Adobe Illustrator', cat: 'software', urgency: 'low', assetTag: '', desc: 'ต้องใช้ทำงานออกแบบแคมเปญไตรมาส 4', requesterId: 'u6', created: daysAgo(8, 15, 0), status: 'resolved', assigneeId: 'u4', resolvedAt: daysAgo(7, 10, 0), parts: [], history: [h(daysAgo(8, 15, 0), 'เปิดคำร้อง', 'วิภาดา รุ่งเรือง'), h(daysAgo(8, 16, 0), 'มอบหมายให้ สมชาย สายชล', 'ธนภัทร เจริญสุข'), h(daysAgo(7, 10, 0), 'อัปเดตสถานะ: แก้ไขเสร็จ — เพิ่ม license แล้ว', 'สมชาย สายชล')] },
-    { id: 'TCK-1025', title: 'เมาส์ไร้สายดับเป็นระยะ', cat: 'peripheral', urgency: 'low', assetTag: '', desc: 'เปลี่ยนถ่านแล้วยังดับอยู่', requesterId: 'u7', created: daysAgo(12, 11, 0), status: 'closed', assigneeId: 'u5', resolvedAt: daysAgo(11, 8, 0), rating: 4, ratingNote: 'เปลี่ยนให้เร็วมาก', parts: [{ sku: 'MOU-M720', name: 'Logitech M720 Mouse', qty: 1 }], history: [h(daysAgo(12, 11, 0), 'เปิดคำร้อง', 'สุรชัย ทองดี'), h(daysAgo(11, 9, 0), 'ผู้แจ้งยืนยันปิดงาน', 'สุรชัย ทองดี')] },
-    { id: 'TCK-1020', title: 'ต่อโปรเจกเตอร์ห้องประชุมไม่ขึ้นภาพ', cat: 'peripheral', urgency: 'medium', assetTag: '', desc: 'ต่อสาย HDMI แล้วจอไม่ขึ้นภาพ', requesterId: 'u6', created: daysAgo(16, 10, 0), status: 'closed', assigneeId: 'u4', resolvedAt: daysAgo(16, 13, 0), rating: 5, ratingNote: '', parts: [{ sku: 'HDMI-2M', name: 'HDMI 2.1 Cable 2m', qty: 1 }], history: [h(daysAgo(16, 10, 0), 'เปิดคำร้อง', 'วิภาดา รุ่งเรือง'), h(daysAgo(15, 9, 0), 'ผู้แจ้งยืนยันปิดงาน · ให้คะแนน 5/5', 'วิภาดา รุ่งเรือง')] },
-    { id: 'TCK-1017', title: 'Outlook ซิงก์อีเมลไม่ได้', cat: 'software', urgency: 'high', assetTag: 'NB-0102', desc: 'อีเมลใหม่ไม่เข้าตั้งแต่เช้า', requesterId: 'u7', created: daysAgo(18, 9, 0), status: 'closed', assigneeId: 'u5', resolvedAt: daysAgo(17, 15, 0), rating: 3, ratingNote: 'ใช้เวลานาน', parts: [], history: [h(daysAgo(18, 9, 0), 'เปิดคำร้อง', 'สุรชัย ทองดี'), h(daysAgo(17, 16, 0), 'ผู้แจ้งยืนยันปิดงาน · ให้คะแนน 3/5', 'สุรชัย ทองดี')] },
-  ];
-  for (const { parts, history, ...t } of tickets)
-    await db.ticket.create({ data: { ...t, parts: { create: parts }, history: { create: history } } });
-
   const prs = [
     { id: 'PR-2026-0014', date: daysAgo(1, 16, 0), requesterId: 'u6', vendor: 'บจก. ออฟฟิศเมท ซัพพลาย', note: 'หมึกใกล้หมด', status: 'pending', lines: [{ sku: 'TON-HP26', name: 'HP 26A Toner Cartridge', unit: 'กล่อง', qty: 6, price: 2750 }] },
     { id: 'PR-2026-0013', date: daysAgo(2, 11, 0), requesterId: 'u6', vendor: 'Dell Thailand', note: 'จอสำหรับทีม Finance ที่ขยายเพิ่ม', status: 'pending_exec', approver1Id: 'u2', decided1: daysAgo(1, 9, 30), lines: [{ sku: 'MON-U27', name: 'Dell UltraSharp 27" 4K', unit: 'เครื่อง', qty: 5, price: 12900 }] },
@@ -97,13 +85,13 @@ async function main() {
     await db.purchaseRequest.create({ data: { ...p, lines: { create: lines.map((l, ord) => ({ ...l, ord })) } } });
 
   await db.stockMove.createMany({ data: [
-    { t: daysAgo(0, 8, 40), sku: 'MOU-M720', type: 'out', qty: 1, ref: 'TCK-1044', by: 'ปกรณ์ มีสุข' },
-    { t: daysAgo(1, 13, 0), sku: 'HDMI-2M', type: 'out', qty: 2, ref: 'TCK-1045', by: 'สมชาย สายชล' },
-    { t: daysAgo(2, 11, 0), sku: 'SSD-1TB', type: 'out', qty: 1, ref: 'TCK-1042', by: 'สมชาย สายชล' },
+    { t: daysAgo(0, 8, 40), sku: 'MOU-M720', type: 'out', qty: 1, ref: 'เบิกใช้ภายในร้าน', by: 'ปกรณ์ มีสุข' },
+    { t: daysAgo(1, 13, 0), sku: 'HDMI-2M', type: 'out', qty: 2, ref: 'เบิกใช้ภายในร้าน', by: 'สมชาย สายชล' },
+    { t: daysAgo(2, 11, 0), sku: 'SSD-1TB', type: 'out', qty: 1, ref: 'เบิกใช้ภายในร้าน', by: 'สมชาย สายชล' },
     { t: daysAgo(3, 9, 0), sku: 'KB-K380', type: 'in', qty: 3, ref: 'รับเข้าด้วยตนเอง', by: 'วิภาดา รุ่งเรือง' },
-    { t: daysAgo(4, 15, 0), sku: 'PWR-065W', type: 'out', qty: 2, ref: 'TCK-1039', by: 'ปกรณ์ มีสุข' },
+    { t: daysAgo(4, 15, 0), sku: 'PWR-065W', type: 'out', qty: 2, ref: 'เบิกใช้ภายในร้าน', by: 'ปกรณ์ มีสุข' },
     { t: daysAgo(5, 10, 0), sku: 'RAM-16D5', type: 'in', qty: 6, ref: 'PR-2026-0009', by: 'วิภาดา รุ่งเรือง' },
-    { t: daysAgo(6, 14, 0), sku: 'TON-HP26', type: 'out', qty: 2, ref: 'TCK-1036', by: 'สมชาย สายชล' },
+    { t: daysAgo(6, 14, 0), sku: 'TON-HP26', type: 'out', qty: 2, ref: 'เบิกใช้ภายในร้าน', by: 'สมชาย สายชล' },
   ] });
 
   const A = (t: Date, userId: string | null, by: string, role: string, cat: string, action: string, target: string, detail = '') => ({ t, userId, by, role, cat, action, target, detail });

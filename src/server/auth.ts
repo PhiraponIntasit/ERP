@@ -49,7 +49,11 @@ export const getUser = cache(async (): Promise<User | null> => {
 
 export const can = (u: User | null, m: Module) => !!(u && u.active && u.perms.includes(m));
 export const allowedModules = (u: User) => ALL.filter(m => can(u, m));
-export const homePath = (u: User) => { const m = allowedModules(u)[0]; return m ? MOD_PATH[m] : '/login'; };
+/** Technicians start on their claim queue; everyone else on their first menu. */
+export const homePath = (u: User) => {
+  const m = (u.role === 'itsupport' || u.role === 'itmanager') && can(u, 'claims') ? 'claims' : allowedModules(u)[0];
+  return m ? MOD_PATH[m] : '/login';
+};
 
 /** Where to go after login: `raw` only if it is one of the app's own pages that `u` may open
  *  (never another site, never a page they'd just be bounced from), otherwise their home page. */

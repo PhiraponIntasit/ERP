@@ -3,22 +3,17 @@ import { loginAs, USERS } from '../helpers';
 
 // Who can open A's menus (ROLE_PERMS in src/lib/domain.ts). Pages without permission redirect to the user's home.
 const cases: [string, string, boolean][] = [
-  [USERS.employee, '/tickets/new', true],
-  [USERS.employee, '/tickets/mine', true],
-  [USERS.employee, '/dispatch', false],
-  [USERS.employee, '/work', false],
-  [USERS.employee, '/users', false],
-  [USERS.itmanager, '/dispatch', true],
-  [USERS.itmanager, '/work', false],
-  [USERS.itsupport, '/work', true],
-  [USERS.itsupport, '/dispatch', false],
+  [USERS.itmanager, '/claims', true],
+  [USERS.itmanager, '/orders', false],
+  [USERS.itsupport, '/claims', true],
+  [USERS.itsupport, '/warranty', true],
   [USERS.itsupport, '/users', false],
   [USERS.manager, '/users', false],
   [USERS.admin, '/users', true],
   [USERS.manager, '/customers', true],
   [USERS.admin, '/customers', true],
   [USERS.storekeeper, '/customers', false],
-  [USERS.employee, '/customers', false],
+  [USERS.itsupport, '/customers', false],
 ];
 
 for (const [user, path, allowed] of cases) {
@@ -31,7 +26,7 @@ for (const [user, path, allowed] of cases) {
 }
 
 test('signed-out visitors are sent to login', async ({ page }) => {
-  for (const path of ['/tickets/new', '/tickets/mine', '/dispatch', '/work', '/users', '/customers', '/customers/cus-demo']) {
+  for (const path of ['/claims', '/users', '/customers', '/customers/cus-demo']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);
   }
@@ -49,5 +44,21 @@ test('wrong password is rejected and audited', async ({ page }) => {
   await page.fill('#p', 'wrong-password');
   await page.press('#p', 'Enter');
   await expect(page.locator('form [role=alert]')).toContainText('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test('the retired helpdesk pages are gone', async ({ page }) => {
+  await loginAs(page, USERS.admin);
+  for (const path of ['/tickets/new', '/tickets/mine', '/dispatch', '/work']) expect((await page.goto(path))?.status()).toBe(404);
+  await page.goto('/dashboard');
+  await expect(page.locator('nav')).not.toContainText(/แจ้งปัญหา|คำร้องของฉัน|ศูนย์มอบหมายงาน|งานที่ได้รับมอบหมาย/);
+});
+
+test('helpdesk-only (employee) accounts are suspended and cannot sign in', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('#u', USERS.employee);
+  await page.fill('#p', '1234');
+  await page.press('#p', 'Enter');
+  await expect(page.locator('form [role=alert]')).toContainText('ถูกระงับ');
   await expect(page).toHaveURL(/\/login/);
 });

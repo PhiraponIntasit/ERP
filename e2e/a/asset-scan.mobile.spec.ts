@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs, USERS } from '../helpers';
 
-// Asset-tag scanner on the "แจ้งปัญหา" form (Pixel 7 project). Headless Chromium on Linux has no native
+// Barcode scanner on the warranty lookup (Pixel 7 project; the same scanner fills serials when packing orders). Headless Chromium on Linux has no native
 // BarcodeDetector, so these tests exercise the ZXing WebAssembly fallback served from /api/zxing-reader.
 
 // Code 128 barcode "NB-0077" as a photo.
@@ -9,9 +9,9 @@ const CODE128 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAWsAAACWCAAAAAA9VvbXAAAC1El
 const NOT_A_BARCODE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
 
 async function openScanner(page: Page) {
-  await loginAs(page, USERS.employee2);
-  await page.goto('/tickets/new');
-  await page.getByRole('button', { name: /สแกนบาร์โค้ด/ }).tap();
+  await loginAs(page, USERS.storekeeper);
+  await page.goto('/warranty');
+  await page.getByRole('button', { name: 'สแกน Serial' }).tap();
   return page.getByRole('dialog');
 }
 
@@ -32,13 +32,13 @@ test.describe('no camera available', () => {
 
     await dlg.locator('input[aria-label="ถ่ายรูปบาร์โค้ด"]').setInputFiles({ name: 'tag.png', mimeType: 'image/png', buffer: CODE128 });
     await expect(dlg).toBeHidden({ timeout: 15_000 });
-    await expect(page.locator('#nt-asset')).toHaveValue('NB-0077');
+    await expect(page).toHaveURL(/\/warranty\?q=NB-0077$/);   // the scanned serial is looked up
   });
 
   test('cancel leaves the field as it was', async ({ page }) => {
     const dlg = await openScanner(page);
     await dlg.getByRole('button', { name: 'ยกเลิก' }).tap();
     await expect(dlg).toBeHidden();
-    await expect(page.locator('#nt-asset')).toHaveValue('');
+    await expect(page).toHaveURL(/\/warranty$/);
   });
 });
