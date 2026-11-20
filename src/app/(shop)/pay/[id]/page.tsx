@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
@@ -14,8 +15,8 @@ export const metadata: Metadata = { title: 'ชำระเงินด้วย
 
 export default async function PayPage({ params }: { params: Promise<{ id: string }> }) {
   const c = await getCustomer();
-  if (!c) return <p className="lead">กรุณาเข้าสู่ระบบลูกค้าเพื่อดูคำสั่งซื้อ</p>;
   const { id } = await params;
+  if (!c) return <div className="stack-4" style={{ alignItems: 'flex-start' }}><p className="lead">กรุณาเข้าสู่ระบบลูกค้าเพื่อดูคำสั่งซื้อ</p><Link href={`/account/login?next=${encodeURIComponent(`/pay/${id}`)}`} className="btn btn-primary">เข้าสู่ระบบ</Link></div>;
   let o = await db.order.findFirst({ where: { id, customerId: c.id }, include: { lines: true, customer: { select: { name: true } }, payments: { orderBy: { createdAt: 'desc' }, take: 1 } } });
   if (!o) notFound();
   if (o.status === 'pending_payment' && o.expiresAt < new Date() && (await expireOrder(id, 'expired')))
