@@ -40,10 +40,10 @@ const EXISTING: Record<string, [string, string, number, Specs]> = {
 /** [sku, name, category, brand, unit, qty, min, cost, price, location, specs] */
 type New = [string, string, string, string, string, number, number, number, number, string, Specs];
 const PRODUCTS: New[] = [
-  ['CPU-R5-7600', 'AMD Ryzen 5 7600', 'cpu', 'AMD', 'ชิ้น', 8, 3, 6080, 6990, 'S-01', { socket: 'AM5', cores: 6, threads: 12, tdpW: 65 }],
-  ['CPU-R7-7800X3D', 'AMD Ryzen 7 7800X3D', 'cpu', 'AMD', 'ชิ้น', 5, 2, 13030, 14990, 'S-01', { socket: 'AM5', cores: 8, threads: 16, tdpW: 120 }],
-  ['CPU-I5-14400F', 'Intel Core i5-14400F', 'cpu', 'Intel', 'ชิ้น', 7, 3, 5900, 6790, 'S-01', { socket: 'LGA1700', cores: 10, threads: 16, tdpW: 65 }],
-  ['CPU-I7-14700K', 'Intel Core i7-14700K', 'cpu', 'Intel', 'ชิ้น', 4, 2, 12420, 14290, 'S-01', { socket: 'LGA1700', cores: 20, threads: 28, tdpW: 125 }],
+  ['CPU-R5-7600', 'AMD Ryzen 5 7600', 'cpu', 'AMD', 'ชิ้น', 8, 3, 6080, 6990, 'S-01', { socket: 'AM5', cores: 6, threads: 12, tdpW: 65, igpu: 'มี' }],
+  ['CPU-R7-7800X3D', 'AMD Ryzen 7 7800X3D', 'cpu', 'AMD', 'ชิ้น', 5, 2, 13030, 14990, 'S-01', { socket: 'AM5', cores: 8, threads: 16, tdpW: 120, igpu: 'มี' }],
+  ['CPU-I5-14400F', 'Intel Core i5-14400F', 'cpu', 'Intel', 'ชิ้น', 7, 3, 5900, 6790, 'S-01', { socket: 'LGA1700', cores: 10, threads: 16, tdpW: 65, igpu: 'ไม่มี' }],
+  ['CPU-I7-14700K', 'Intel Core i7-14700K', 'cpu', 'Intel', 'ชิ้น', 4, 2, 12420, 14290, 'S-01', { socket: 'LGA1700', cores: 20, threads: 28, tdpW: 125, igpu: 'มี' }],
   ['MB-TUF-B650', 'ASUS TUF GAMING B650-PLUS WIFI', 'mainboard', 'ASUS', 'ชิ้น', 5, 2, 6460, 7590, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 3 }],
   ['MB-MSI-B650M', 'MSI PRO B650M-A WIFI', 'mainboard', 'MSI', 'ชิ้น', 6, 2, 4920, 5790, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'mATX', m2Slots: 2 }],
   ['MB-GB-B760M', 'Gigabyte B760M DS3H DDR4', 'mainboard', 'Gigabyte', 'ชิ้น', 6, 2, 3390, 3990, 'S-02', { socket: 'LGA1700', chipset: 'B760', ramType: 'DDR4', formFactor: 'mATX', m2Slots: 2 }],

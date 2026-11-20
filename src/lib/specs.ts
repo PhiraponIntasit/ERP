@@ -20,6 +20,7 @@ export const SPEC_FIELDS: Record<string, readonly SpecField[]> = {
     { key: 'cores', label: 'จำนวนคอร์', type: 'number' },
     { key: 'threads', label: 'จำนวนเธรด', type: 'number' },
     { key: 'tdpW', label: 'TDP', type: 'number', unit: 'W' },
+    { key: 'igpu', label: 'กราฟิกในตัว', type: 'select', options: ['มี', 'ไม่มี'] },
   ],
   mainboard: [
     { key: 'socket', label: 'Socket', type: 'select', options: SOCKETS },
